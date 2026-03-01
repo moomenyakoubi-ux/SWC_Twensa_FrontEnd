@@ -5,11 +5,11 @@ import ResponsiveMedia from './ResponsiveMedia';
 import { getBestMediaInfo } from '../utils/media';
 
 const DEFAULT_CONTENT_ASPECT_RATIO = 4 / 5;
-const WEB_CARD_MIN_WIDTH = 360;
-const WEB_CARD_MAX_WIDTH = 720;
-const WEB_TARGET_MAX_MEDIA_WIDTH = 560;
+const WEB_CARD_MIN_WIDTH = 440;
+const WEB_CARD_MAX_WIDTH = 860;
+const WEB_TARGET_MAX_MEDIA_WIDTH = 700;
 const WEB_TARGET_MEDIA_VIEWPORT_SHARE = 0.5;
-const WEB_MAX_MEDIA_HEIGHT_PX = 520;
+const WEB_MAX_MEDIA_HEIGHT_PX = 560;
 const WEB_MAX_MEDIA_VH = 0.6;
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -115,6 +115,7 @@ const createStyles = (theme) =>
     },
     cardWeb: {
       alignSelf: 'center',
+      maxWidth: '100%',
     },
     cardMobile: {
       width: '100%',

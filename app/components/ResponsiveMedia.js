@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Image, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
-const WEB_MAX_MEDIA_HEIGHT_PX = 520;
+const WEB_MAX_MEDIA_HEIGHT_PX = 560;
 const WEB_MAX_MEDIA_VH = 0.6;
 
 const toFinitePositiveNumber = (value) => {
