@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
+import ResponsiveMedia from './ResponsiveMedia';
 
 const DEFAULT_CONTENT_ASPECT_RATIO = 4 / 5;
 
@@ -89,13 +90,10 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
       style={({ pressed }) => [styles.card, pressed && onPress && styles.pressed]}
     >
       {sourceUri ? (
-        <View style={[styles.mediaContainer, { aspectRatio }]}>
-          <Image
-            source={{ uri: sourceUri }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
+        <ResponsiveMedia
+          uri={sourceUri}
+          aspectRatio={aspectRatio}
+        />
       ) : null}
       <View style={styles.content}>
         <View style={styles.badgeRow}>
@@ -122,15 +120,6 @@ const createStyles = (theme) =>
     },
     pressed: {
       opacity: 0.92,
-    },
-    image: {
-      width: '100%',
-      height: '100%',
-      backgroundColor: theme.colors.surfaceMuted,
-    },
-    mediaContainer: {
-      width: '100%',
-      backgroundColor: theme.colors.surfaceMuted,
     },
     content: {
       padding: theme.spacing.md,

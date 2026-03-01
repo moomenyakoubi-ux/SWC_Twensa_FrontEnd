@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   ImageBackground,
   Platform,
   Pressable,
@@ -16,6 +15,7 @@ import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
 import WebSidebar, { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
 import { WEB_TAB_BAR_WIDTH } from '../components/WebTabBar';
+import ResponsiveMedia from '../components/ResponsiveMedia';
 import useSession from '../auth/useSession';
 import { fetchEventsNews } from '../services/contentApi';
 
@@ -204,13 +204,10 @@ const NewsScreen = ({ navigation }) => {
       return (
         <View style={styles.newsCard}>
           {sourceUri ? (
-            <View style={[styles.cardImageContainer, { aspectRatio }]}>
-              <Image
-                source={{ uri: sourceUri }}
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
-            </View>
+            <ResponsiveMedia
+              uri={sourceUri}
+              aspectRatio={aspectRatio}
+            />
           ) : null}
           <View style={styles.cardContent}>
             <View style={styles.badgeRow}>
@@ -358,13 +355,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadow.card,
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cardImageContainer: {
-    width: '100%',
   },
   cardContent: {
     padding: theme.spacing.md,
