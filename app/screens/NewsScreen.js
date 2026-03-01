@@ -28,6 +28,37 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
+const getMediaUrl = (media) =>
+  media?.publicUrl ||
+  media?.public_url ||
+  media?.url ||
+  media?.image_url ||
+  media?.image ||
+  null;
+
+const getBestMedia = (item) => {
+  const firstMedia = Array.isArray(item?.mediaItems) && item.mediaItems.length > 0
+    ? item.mediaItems[0]
+    : null;
+
+  const sourceUri = firstMedia
+    ? getMediaUrl(firstMedia)
+    : item?.publicUrl || item?.image_url || item?.image || null;
+
+  const width = toFiniteNumber(firstMedia?.width) || toFiniteNumber(item?.width);
+  const height = toFiniteNumber(firstMedia?.height) || toFiniteNumber(item?.height);
+
+  const aspectRatio =
+    toFiniteNumber(firstMedia?.aspectRatio) ||
+    toFiniteNumber(firstMedia?.aspect_ratio) ||
+    toFiniteNumber(item?.aspect_ratio) ||
+    toFiniteNumber(item?.mediaAspectRatio) ||
+    (width && height ? width / height : null) ||
+    DEFAULT_CONTENT_ASPECT_RATIO;
+
+  return { sourceUri, aspectRatio };
+};
+
 const dedupeById = (items) => {
   const map = new Map();
   items.forEach((item) => {
@@ -168,23 +199,18 @@ const NewsScreen = ({ navigation }) => {
         ? [item.location, formatStartAt(item.starts_at)].filter(Boolean).join(' • ')
         : null;
       const badgeLabel = isEvent ? newsStrings.eventsSection : newsStrings.newsSection;
-      const sourceUri = item?.publicUrl || item?.image_url || item?.image || null;
-      const width = toFiniteNumber(item?.width);
-      const height = toFiniteNumber(item?.height);
-      const ar =
-        toFiniteNumber(item?.aspect_ratio) ||
-        toFiniteNumber(item?.mediaAspectRatio) ||
-        (width && height ? width / height : null);
-      const imageAspectRatio = ar || DEFAULT_CONTENT_ASPECT_RATIO;
+      const { sourceUri, aspectRatio } = getBestMedia(item);
 
       return (
         <View style={styles.newsCard}>
           {sourceUri ? (
-            <Image
-              source={{ uri: sourceUri }}
-              style={[styles.cardImage, { aspectRatio: imageAspectRatio }]}
-              resizeMode="cover"
-            />
+            <View style={[styles.cardImageContainer, { aspectRatio }]}>
+              <Image
+                source={{ uri: sourceUri }}
+                style={styles.cardImage}
+                resizeMode="cover"
+              />
+            </View>
           ) : null}
           <View style={styles.cardContent}>
             <View style={styles.badgeRow}>
@@ -334,6 +360,10 @@ const styles = StyleSheet.create({
     ...theme.shadow.card,
   },
   cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardImageContainer: {
     width: '100%',
   },
   cardContent: {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -7,6 +7,41 @@ const DEFAULT_CONTENT_ASPECT_RATIO = 4 / 5;
 const toFiniteNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getMediaUrl = (media) =>
+  media?.publicUrl ||
+  media?.public_url ||
+  media?.url ||
+  media?.image_url ||
+  media?.image ||
+  null;
+
+const getBestMedia = (item) => {
+  const firstMedia = Array.isArray(item?.mediaItems) && item.mediaItems.length > 0
+    ? item.mediaItems[0]
+    : null;
+
+  const sourceUri = firstMedia
+    ? getMediaUrl(firstMedia)
+    : item?.publicUrl || item?.image_url || item?.image || null;
+
+  const width = toFiniteNumber(firstMedia?.width) || toFiniteNumber(item?.width);
+  const height = toFiniteNumber(firstMedia?.height) || toFiniteNumber(item?.height);
+
+  const aspectRatio =
+    toFiniteNumber(firstMedia?.aspectRatio) ||
+    toFiniteNumber(firstMedia?.aspect_ratio) ||
+    toFiniteNumber(item?.aspect_ratio) ||
+    toFiniteNumber(item?.mediaAspectRatio) ||
+    (width && height ? width / height : null) ||
+    DEFAULT_CONTENT_ASPECT_RATIO;
+
+  return {
+    sourceUri,
+    aspectRatio,
+    hasMediaItems: Boolean(firstMedia),
+  };
 };
 
 const formatStartsAt = (value) => {
@@ -23,14 +58,28 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
   const badgeLabel = isEvent ? 'Evento' : 'Notizia';
   const preview = item?.excerpt || item?.content || '';
   const eventMeta = isEvent ? [item?.location, formatStartsAt(item?.starts_at)].filter(Boolean).join(' • ') : '';
-  const sourceUri = item?.publicUrl || item?.image_url || item?.image || null;
-  const width = toFiniteNumber(item?.width);
-  const height = toFiniteNumber(item?.height);
-  const ar =
-    toFiniteNumber(item?.aspect_ratio) ||
-    toFiniteNumber(item?.mediaAspectRatio) ||
-    (width && height ? width / height : null) ||
-    DEFAULT_CONTENT_ASPECT_RATIO;
+  const { sourceUri, aspectRatio, hasMediaItems } = useMemo(() => getBestMedia(item), [item]);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    const type = String(item?.type || '').trim().toLowerCase();
+    const kind = String(item?.kind || '').trim().toLowerCase();
+    const isEventNewsLike =
+      kind === 'event_news' ||
+      kind === 'event' ||
+      kind === 'news' ||
+      type === 'event' ||
+      type === 'news';
+    if (!isEventNewsLike) return;
+
+    console.log('[EVENT_NEWS_MEDIA_DEBUG]', {
+      kind: item?.kind || null,
+      type: item?.type || null,
+      sourceUri,
+      aspectRatio,
+      hasMediaItems,
+    });
+  }, [aspectRatio, hasMediaItems, item?.kind, item?.type, sourceUri]);
 
   return (
     <Pressable
@@ -40,11 +89,13 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
       style={({ pressed }) => [styles.card, pressed && onPress && styles.pressed]}
     >
       {sourceUri ? (
-        <Image
-          source={{ uri: sourceUri }}
-          style={[styles.image, { aspectRatio: ar }]}
-          resizeMode="cover"
-        />
+        <View style={[styles.mediaContainer, { aspectRatio }]}>
+          <Image
+            source={{ uri: sourceUri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
       ) : null}
       <View style={styles.content}>
         <View style={styles.badgeRow}>
@@ -73,6 +124,11 @@ const createStyles = (theme) =>
       opacity: 0.92,
     },
     image: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: theme.colors.surfaceMuted,
+    },
+    mediaContainer: {
       width: '100%',
       backgroundColor: theme.colors.surfaceMuted,
     },
