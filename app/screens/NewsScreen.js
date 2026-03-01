@@ -56,6 +56,19 @@ const getBestMedia = (item) => {
     (width && height ? width / height : null) ||
     DEFAULT_CONTENT_ASPECT_RATIO;
 
+  if (__DEV__) {
+    console.log('[NEWS_MEDIA_DEBUG]', {
+      id: item?.type_id || item?.id,
+      hasMediaItems: Array.isArray(item?.mediaItems) && item.mediaItems.length > 0,
+      raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
+      raw_ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
+      raw_width: firstMedia?.width ?? null,
+      raw_height: firstMedia?.height ?? null,
+      parsed_aspectRatio: aspectRatio,
+      sourceUri,
+    });
+  }
+
   return { sourceUri, aspectRatio };
 };
 

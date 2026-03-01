@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -18,12 +18,12 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
 
   const safeAspectRatio = toFinitePositiveNumber(aspectRatio) || DEFAULT_ASPECT_RATIO;
 
-  const wrapperStyle = useMemo(() => {
+  const sizing = useMemo(() => {
     if (!isWeb) {
       return {
-        width: '100%',
-        aspectRatio: safeAspectRatio,
-        borderRadius,
+        computedHeight: null,
+        maxHeight: null,
+        finalHeight: null,
       };
     }
 
@@ -35,14 +35,46 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
 
     const computedHeight =
       containerWidth > 0 ? containerWidth / safeAspectRatio : maxHeight;
-    const clampedHeight = Math.min(computedHeight, maxHeight);
+    const finalHeight = Math.min(computedHeight, maxHeight);
+
+    return {
+      computedHeight,
+      maxHeight,
+      finalHeight,
+    };
+  }, [containerWidth, isWeb, safeAspectRatio, windowHeight]);
+
+  const wrapperStyle = useMemo(() => {
+    if (!isWeb) {
+      return {
+        width: '100%',
+        aspectRatio: safeAspectRatio,
+        borderRadius,
+      };
+    }
 
     return {
       width: '100%',
-      height: clampedHeight,
+      height: sizing.finalHeight,
       borderRadius,
     };
-  }, [borderRadius, containerWidth, isWeb, safeAspectRatio, windowHeight]);
+  }, [borderRadius, isWeb, safeAspectRatio, sizing.finalHeight]);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    const computedHeight = sizing.computedHeight;
+    const maxHeight = sizing.maxHeight;
+    const finalHeight = sizing.finalHeight;
+
+    console.log('[RESPONSIVE_MEDIA_DEBUG]', {
+      containerWidth,
+      aspectRatioProp: aspectRatio,
+      computedHeight,
+      maxHeight: Platform.OS === 'web' ? maxHeight : null,
+      finalHeight,
+      didClamp: Platform.OS === 'web' ? computedHeight > maxHeight : false,
+    });
+  }, [aspectRatio, containerWidth, sizing.computedHeight, sizing.finalHeight, sizing.maxHeight]);
 
   if (!uri) return null;
 

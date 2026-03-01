@@ -42,6 +42,7 @@ const getBestMedia = (item) => {
     sourceUri,
     aspectRatio,
     hasMediaItems: Boolean(firstMedia),
+    firstMedia,
   };
 };
 
@@ -59,7 +60,7 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
   const badgeLabel = isEvent ? 'Evento' : 'Notizia';
   const preview = item?.excerpt || item?.content || '';
   const eventMeta = isEvent ? [item?.location, formatStartsAt(item?.starts_at)].filter(Boolean).join(' • ') : '';
-  const { sourceUri, aspectRatio, hasMediaItems } = useMemo(() => getBestMedia(item), [item]);
+  const { sourceUri, aspectRatio, hasMediaItems, firstMedia } = useMemo(() => getBestMedia(item), [item]);
 
   useEffect(() => {
     if (!__DEV__) return;
@@ -74,13 +75,16 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
     if (!isEventNewsLike) return;
 
     console.log('[EVENT_NEWS_MEDIA_DEBUG]', {
-      kind: item?.kind || null,
-      type: item?.type || null,
+      id: item?.type_id || item?.id,
+      hasMediaItems: Array.isArray(item?.mediaItems) && item.mediaItems.length > 0,
+      raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
+      raw_ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
+      raw_width: firstMedia?.width ?? null,
+      raw_height: firstMedia?.height ?? null,
+      parsed_aspectRatio: aspectRatio,
       sourceUri,
-      aspectRatio,
-      hasMediaItems,
     });
-  }, [aspectRatio, hasMediaItems, item?.kind, item?.type, sourceUri]);
+  }, [aspectRatio, firstMedia, hasMediaItems, item?.id, item?.kind, item?.mediaItems, item?.type, item?.type_id, sourceUri]);
 
   return (
     <Pressable
