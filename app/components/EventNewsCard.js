@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
 import ResponsiveMedia from './ResponsiveMedia';
@@ -18,6 +18,7 @@ const isDebugMedia = () => {
     return false;
   }
 };
+const DEBUG_MEDIA = isDebugMedia();
 
 const getMediaUrl = (media) =>
   media?.publicUrl ||
@@ -46,12 +47,21 @@ const getBestMedia = (item) => {
     toFiniteNumber(item?.mediaAspectRatio) ||
     (width && height ? width / height : null) ||
     DEFAULT_CONTENT_ASPECT_RATIO;
+  const debugInfo = DEBUG_MEDIA
+    ? {
+        id: item?.type_id || item?.id,
+        ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
+        raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
+        raw_w: firstMedia?.width ?? null,
+        raw_h: firstMedia?.height ?? null,
+        used_ar: aspectRatio,
+      }
+    : null;
 
   return {
     sourceUri,
     aspectRatio,
-    hasMediaItems: Boolean(firstMedia),
-    firstMedia,
+    debugInfo,
   };
 };
 
@@ -69,31 +79,7 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
   const badgeLabel = isEvent ? 'Evento' : 'Notizia';
   const preview = item?.excerpt || item?.content || '';
   const eventMeta = isEvent ? [item?.location, formatStartsAt(item?.starts_at)].filter(Boolean).join(' • ') : '';
-  const { sourceUri, aspectRatio, hasMediaItems, firstMedia } = useMemo(() => getBestMedia(item), [item]);
-
-  useEffect(() => {
-    if (!(__DEV__ || isDebugMedia())) return;
-    const type = String(item?.type || '').trim().toLowerCase();
-    const kind = String(item?.kind || '').trim().toLowerCase();
-    const isEventNewsLike =
-      kind === 'event_news' ||
-      kind === 'event' ||
-      kind === 'news' ||
-      type === 'event' ||
-      type === 'news';
-    if (!isEventNewsLike) return;
-
-    console.log('[EVENT_NEWS_MEDIA_DEBUG]', {
-      id: item?.type_id || item?.id,
-      hasMediaItems: Array.isArray(item?.mediaItems) && item.mediaItems.length > 0,
-      raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
-      raw_ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
-      raw_width: firstMedia?.width ?? null,
-      raw_height: firstMedia?.height ?? null,
-      parsed_aspectRatio: aspectRatio,
-      sourceUri,
-    });
-  }, [aspectRatio, firstMedia, hasMediaItems, item?.id, item?.kind, item?.mediaItems, item?.type, item?.type_id, sourceUri]);
+  const { sourceUri, aspectRatio, debugInfo } = useMemo(() => getBestMedia(item), [item]);
 
   return (
     <Pressable
@@ -106,6 +92,7 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
         <ResponsiveMedia
           uri={sourceUri}
           aspectRatio={aspectRatio}
+          debugInfo={debugInfo}
         />
       ) : null}
       <View style={styles.content}>

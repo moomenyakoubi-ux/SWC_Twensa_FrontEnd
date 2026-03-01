@@ -36,6 +36,7 @@ const isDebugMedia = () => {
     return false;
   }
 };
+const DEBUG_MEDIA = isDebugMedia();
 
 const getMediaUrl = (media) =>
   media?.publicUrl ||
@@ -64,21 +65,18 @@ const getBestMedia = (item) => {
     toFiniteNumber(item?.mediaAspectRatio) ||
     (width && height ? width / height : null) ||
     DEFAULT_CONTENT_ASPECT_RATIO;
+  const debugInfo = DEBUG_MEDIA
+    ? {
+        id: item?.type_id || item?.id,
+        ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
+        raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
+        raw_w: firstMedia?.width ?? null,
+        raw_h: firstMedia?.height ?? null,
+        used_ar: aspectRatio,
+      }
+    : null;
 
-  if (__DEV__ || isDebugMedia()) {
-    console.log('[NEWS_MEDIA_DEBUG]', {
-      id: item?.type_id || item?.id,
-      hasMediaItems: Array.isArray(item?.mediaItems) && item.mediaItems.length > 0,
-      raw_media_ar: firstMedia?.aspectRatio ?? firstMedia?.aspect_ratio ?? null,
-      raw_ratio_key: firstMedia?.ratio_key ?? firstMedia?.ratioKey ?? null,
-      raw_width: firstMedia?.width ?? null,
-      raw_height: firstMedia?.height ?? null,
-      parsed_aspectRatio: aspectRatio,
-      sourceUri,
-    });
-  }
-
-  return { sourceUri, aspectRatio };
+  return { sourceUri, aspectRatio, debugInfo };
 };
 
 const dedupeById = (items) => {
@@ -221,7 +219,7 @@ const NewsScreen = ({ navigation }) => {
         ? [item.location, formatStartAt(item.starts_at)].filter(Boolean).join(' • ')
         : null;
       const badgeLabel = isEvent ? newsStrings.eventsSection : newsStrings.newsSection;
-      const { sourceUri, aspectRatio } = getBestMedia(item);
+      const { sourceUri, aspectRatio, debugInfo } = getBestMedia(item);
 
       return (
         <View style={styles.newsCard}>
@@ -229,6 +227,7 @@ const NewsScreen = ({ navigation }) => {
             <ResponsiveMedia
               uri={sourceUri}
               aspectRatio={aspectRatio}
+              debugInfo={debugInfo}
             />
           ) : null}
           <View style={styles.cardContent}>

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const WEB_MAX_MEDIA_HEIGHT_PX = 520;
@@ -19,8 +19,16 @@ const isDebugMedia = () => {
     return false;
   }
 };
+const DEBUG_MEDIA = isDebugMedia();
 
-const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
+const formatDebugValue = (value, decimals = 2) => {
+  if (value == null) return 'null';
+  const num = Number(value);
+  if (!Number.isFinite(num)) return String(value);
+  return String(Number(num.toFixed(decimals)));
+};
+
+const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0, debugInfo = null }) => {
   const { height: windowHeight } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = useState(0);
   const isWeb = Platform.OS === 'web';
@@ -69,23 +77,17 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
     };
   }, [borderRadius, isWeb, safeAspectRatio, sizing.finalHeight]);
 
-  useEffect(() => {
-    if (!(__DEV__ || isDebugMedia())) return;
-    const computedHeight = sizing.computedHeight;
-    const maxHeight = sizing.maxHeight;
-    const finalHeight = sizing.finalHeight;
-
-    console.log('[RESPONSIVE_MEDIA_DEBUG]', {
-      containerWidth,
-      aspectRatioProp: aspectRatio,
-      computedHeight,
-      maxHeight: Platform.OS === 'web' ? maxHeight : null,
-      finalHeight,
-      didClamp: Platform.OS === 'web' ? computedHeight > maxHeight : false,
-    });
-  }, [aspectRatio, containerWidth, sizing.computedHeight, sizing.finalHeight, sizing.maxHeight]);
-
   if (!uri) return null;
+
+  const computedHeight = sizing.computedHeight;
+  const maxHeight = sizing.maxHeight;
+  const finalHeight = isWeb ? sizing.finalHeight : containerWidth > 0 ? containerWidth / safeAspectRatio : null;
+  const didClamp =
+    isWeb &&
+    Number.isFinite(computedHeight) &&
+    Number.isFinite(maxHeight) &&
+    computedHeight > maxHeight;
+  const showDebugOverlay = DEBUG_MEDIA;
 
   return (
     <View
@@ -96,6 +98,19 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
       }}
     >
       <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+      {showDebugOverlay ? (
+        <View pointerEvents="none" style={styles.debugOverlay}>
+          <Text style={styles.debugText}>id={debugInfo?.id ?? 'null'}</Text>
+          <Text style={styles.debugText}>ratio_key={debugInfo?.ratio_key ?? 'null'}</Text>
+          <Text style={styles.debugText}>raw_ar={formatDebugValue(debugInfo?.raw_media_ar)}</Text>
+          <Text style={styles.debugText}>used_ar={formatDebugValue(debugInfo?.used_ar ?? safeAspectRatio)}</Text>
+          <Text style={styles.debugText}>w={debugInfo?.raw_w ?? 'null'} h={debugInfo?.raw_h ?? 'null'}</Text>
+          <Text style={styles.debugText}>
+            cw={formatDebugValue(containerWidth)} ch={formatDebugValue(computedHeight)} maxH={formatDebugValue(isWeb ? maxHeight : null)}
+          </Text>
+          <Text style={styles.debugText}>finalH={formatDebugValue(finalHeight)} clamp={didClamp ? 'true' : 'false'}</Text>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -108,6 +123,21 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  debugOverlay: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    zIndex: 10,
+    padding: 6,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 8,
+    maxWidth: '90%',
+  },
+  debugText: {
+    fontSize: 11,
+    color: '#fff',
+    lineHeight: 14,
   },
 });
 
