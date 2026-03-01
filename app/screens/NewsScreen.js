@@ -35,9 +35,13 @@ const getMediaUrl = (media) =>
 const getBestMedia = (item) => {
   const firstMedia = Array.isArray(item?.mediaItems) ? item.mediaItems[0] : null;
 
-  const sourceUri = firstMedia
-    ? getMediaUrl(firstMedia)
-    : item?.publicUrl || item?.image_url || item?.image || null;
+  const sourceUri =
+    getMediaUrl(firstMedia) ||
+    item?.publicUrl ||
+    item?.public_url ||
+    item?.image_url ||
+    item?.image ||
+    null;
 
   const arFromMedia =
     parseAspectRatio(firstMedia?.aspectRatio) ||
@@ -47,7 +51,8 @@ const getBestMedia = (item) => {
     parseAspectRatio(firstMedia?.ratioKey);
   const arFromRoot =
     parseAspectRatio(item?.aspectRatio) ||
-    parseAspectRatio(item?.aspect_ratio);
+    parseAspectRatio(item?.aspect_ratio) ||
+    parseAspectRatio(item?.mediaAspectRatio);
   const w = Number(firstMedia?.width ?? item?.width);
   const h = Number(firstMedia?.height ?? item?.height);
   const arFromWH =
