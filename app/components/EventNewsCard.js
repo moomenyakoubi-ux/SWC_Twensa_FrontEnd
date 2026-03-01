@@ -29,8 +29,8 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
   const ar =
     toFiniteNumber(item?.aspect_ratio) ||
     toFiniteNumber(item?.mediaAspectRatio) ||
-    (width && height ? width / height : null);
-  const imageAspectRatio = ar || DEFAULT_CONTENT_ASPECT_RATIO;
+    (width && height ? width / height : null) ||
+    DEFAULT_CONTENT_ASPECT_RATIO;
 
   return (
     <Pressable
@@ -42,7 +42,7 @@ const EventNewsCard = ({ item, isRTL, onPress, accessibilityRole }) => {
       {sourceUri ? (
         <Image
           source={{ uri: sourceUri }}
-          style={[styles.image, { aspectRatio: imageAspectRatio }]}
+          style={[styles.image, { aspectRatio: ar }]}
           resizeMode="cover"
         />
       ) : null}

@@ -32,11 +32,33 @@ const HOME_PAGE_SIZE = 20;
 const EVENT_NEWS_DETAIL_ROUTES = ['EventNewsDetail', 'NewsDetail', 'EventDetail'];
 const SYNTHETIC_HOME_ID_PATTERN = /^(post|official|sponsored|event[-_]news)-\d+$/i;
 const SEED_CONTENT_PATTERN = /\b(mock|seed|demo|fake)\b/i;
+
+const resolveFeedItemType = (item) => {
+  const rawType = String(item?.type || '').trim().toLowerCase();
+  if (rawType) return rawType;
+  const rawKind = String(item?.kind || '').trim().toLowerCase();
+  if (rawKind && rawKind !== 'event_news') return rawKind;
+  if (rawKind === 'event_news') {
+    const hasEventHints = Boolean(item?.starts_at || item?.location);
+    return hasEventHints ? 'event' : 'news';
+  }
+  if (item?.authorId || item?.content) return 'post';
+  if (item?.sponsor_name) return 'sponsored';
+  if (item?.target_url) return 'official';
+  return 'unknown';
+};
+
+const buildFeedItemKey = (item) => {
+  const type = resolveFeedItemType(item);
+  const id = String(item?.id ?? '').trim();
+  return `${type}_${id}`;
+};
+
 const dedupeFeedItems = (items) => {
   const map = new Map();
   items.forEach((item) => {
-    if (!item?.id || !item?.kind) return;
-    const key = `${item.kind}:${item.id}`;
+    if (!item?.id) return;
+    const key = buildFeedItemKey(item);
     if (!map.has(key)) {
       map.set(key, item);
     }
@@ -231,12 +253,13 @@ const HomeScreen = ({ navigation }) => {
     loadHomeFeed();
   }, [initialFeedLoading, loadHomeFeed, loadingMoreFeed, refreshingFeed]);
 
-  const keyExtractor = useCallback((item) => `${item.kind}:${item.id}`, []);
+  const keyExtractor = useCallback((item) => buildFeedItemKey(item), []);
 
   useEffect(() => {
     if (!__DEV__ || !homeFeedItems.length) return;
     console.log('[HOME_RENDER_FIRST_ITEM]', homeFeedItems[0]);
     console.log('[HOME_RENDER_FIRST_MEDIA]', homeFeedItems[0]?.mediaItems?.[0]);
+    console.log('[HOME_KEYS_SAMPLE]', homeFeedItems.slice(0, 10).map((i) => `${resolveFeedItemType(i)}_${String(i?.id ?? '')}`));
   }, [homeFeedItems]);
 
   const openEventNewsItem = useCallback(
@@ -257,7 +280,24 @@ const HomeScreen = ({ navigation }) => {
 
   const renderFeedItem = useCallback(
     ({ item }) => {
-      if (item.kind === 'event_news') {
+      const type = resolveFeedItemType(item);
+      const normalizedKind = String(item?.kind || '').trim().toLowerCase();
+      const isEventNews =
+        normalizedKind === 'event_news' ||
+        normalizedKind === 'event' ||
+        normalizedKind === 'news' ||
+        type === 'event' ||
+        type === 'news';
+
+      if (__DEV__) {
+        console.log('[HOME_KIND_DEBUG]', {
+          id: item?.id,
+          kind: item?.kind,
+          type,
+        });
+      }
+
+      if (isEventNews) {
         const hasExternalUrl = Boolean(String(item?.external_url || '').trim());
         const onPress = hasExternalUrl || hasEventNewsDetailRoute ? () => openEventNewsItem(item) : undefined;
         return (
