@@ -4,7 +4,6 @@ import { Image, Platform, StyleSheet, useWindowDimensions, View } from 'react-na
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const WEB_MAX_MEDIA_HEIGHT_PX = 520;
 const WEB_MAX_MEDIA_VH = 0.6;
-const WEB_MIN_MEDIA_HEIGHT_PX = 180;
 
 const toFinitePositiveNumber = (value) => {
   const parsed = Number(value);
@@ -23,23 +22,34 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
       return {
         computedHeight: null,
         maxHeight: null,
+        finalWidth: null,
         finalHeight: null,
       };
     }
 
     const safeWindowHeight = Math.max(320, Number(windowHeight) || 320);
-    const maxHeight = Math.max(
-      WEB_MIN_MEDIA_HEIGHT_PX,
-      Math.min(WEB_MAX_MEDIA_HEIGHT_PX, safeWindowHeight * WEB_MAX_MEDIA_VH),
-    );
+    const maxHeight = Math.min(WEB_MAX_MEDIA_HEIGHT_PX, safeWindowHeight * WEB_MAX_MEDIA_VH);
 
-    const computedHeight =
-      containerWidth > 0 ? containerWidth / safeAspectRatio : maxHeight;
-    const finalHeight = Math.min(computedHeight, maxHeight);
+    if (containerWidth <= 0) {
+      return {
+        computedHeight: null,
+        maxHeight,
+        finalWidth: null,
+        finalHeight: maxHeight,
+      };
+    }
+
+    const computedHeight = containerWidth / safeAspectRatio;
+    const shouldClampHeight = computedHeight > maxHeight;
+    const finalHeight = shouldClampHeight ? maxHeight : computedHeight;
+    const finalWidth = shouldClampHeight
+      ? Math.min(containerWidth, Math.max(1, Math.floor(maxHeight * safeAspectRatio)))
+      : containerWidth;
 
     return {
       computedHeight,
       maxHeight,
+      finalWidth,
       finalHeight,
     };
   }, [containerWidth, isWeb, safeAspectRatio, windowHeight]);
@@ -54,11 +64,14 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
     }
 
     return {
-      width: '100%',
-      height: sizing.finalHeight,
+      width: sizing.finalWidth ?? '100%',
+      height: sizing.finalHeight ?? sizing.maxHeight,
+      maxWidth: '100%',
+      alignSelf: 'center',
+      overflow: 'hidden',
       borderRadius,
     };
-  }, [borderRadius, isWeb, safeAspectRatio, sizing.finalHeight]);
+  }, [borderRadius, isWeb, safeAspectRatio, sizing.finalHeight, sizing.finalWidth, sizing.maxHeight]);
 
   if (!uri) return null;
 
@@ -66,7 +79,8 @@ const ResponsiveMedia = ({ uri, aspectRatio, borderRadius = 0 }) => {
     <View
       style={[styles.wrapper, wrapperStyle]}
       onLayout={(event) => {
-        const nextWidth = Math.max(1, event?.nativeEvent?.layout?.width || 0);
+        const rawWidth = Number(event?.nativeEvent?.layout?.width) || 0;
+        const nextWidth = rawWidth > 0 ? rawWidth : 0;
         setContainerWidth((prev) => (Math.abs(prev - nextWidth) < 0.5 ? prev : nextWidth));
       }}
     >
