@@ -4,7 +4,6 @@ import {
   Alert,
   Animated,
   FlatList,
-  Image,
   ImageBackground,
   Linking,
   Platform,
@@ -353,11 +352,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.overlay}>
         <View style={[styles.header, isRTL && styles.headerRtl, isWeb && styles.headerWeb]}>
           <View style={styles.headerText}>
-            <Image
-              source={require('../../assets/brand/twensa-wordmark.png')}
-              style={styles.greetingImage}
-              resizeMode="contain"
-            />
+            <Text style={[styles.greeting, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
             <Text style={[styles.subtitle, isRTL && styles.rtlText]}>{homeStrings.subtitle}</Text>
           </View>
           {!isWeb ? (
@@ -412,11 +407,7 @@ const HomeScreen = ({ navigation }) => {
               },
             ]}
           >
-            <Image
-              source={require('../../assets/brand/twensa-wordmark.png')}
-              style={styles.menuTitleImage}
-              resizeMode="contain"
-            />
+            <Text style={[styles.menuTitle, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
             <View style={styles.menuItems}>
               {[
                 { label: menuStrings.addContact, icon: 'person-add', route: 'AddContact' },
@@ -504,11 +495,6 @@ const styles = StyleSheet.create({
     color: theme.colors.card,
     marginBottom: theme.spacing.xs,
   },
-  greetingImage: {
-    width: 156,
-    height: 30,
-    marginBottom: theme.spacing.xs,
-  },
   subtitle: {
     color: theme.colors.card,
     opacity: 0.9,
@@ -591,11 +577,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: theme.colors.text,
-    marginTop: Platform.OS === 'android' ? theme.spacing.sm : 0,
-  },
-  menuTitleImage: {
-    width: 150,
-    height: 24,
     marginTop: Platform.OS === 'android' ? theme.spacing.sm : 0,
   },
   menuItems: {

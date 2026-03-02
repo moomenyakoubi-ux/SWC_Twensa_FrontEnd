@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -56,11 +56,7 @@ const WebSidebar = ({ title, menuStrings, navigation, isRTL }) => {
 
   return (
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
-      <Image
-        source={require('../../assets/brand/twensa-wordmark.png')}
-        style={styles.menuTitleImage}
-        resizeMode="contain"
-      />
+      <Text style={[styles.menuTitle, isRTL && styles.rtlText]}>{title}</Text>
       <View style={styles.menuItems}>
         {getMenuItems(menuStrings).map((item) => {
           const isActive = activeRoute === item.route;
@@ -136,11 +132,6 @@ const createStyles = (appTheme) =>
       fontSize: 22,
       fontWeight: '800',
       color: appTheme.colors.text,
-      marginTop: Platform.OS === 'android' ? appTheme.spacing.sm : 0,
-    },
-    menuTitleImage: {
-      width: 150,
-      height: 24,
       marginTop: Platform.OS === 'android' ? appTheme.spacing.sm : 0,
     },
     menuItems: {
