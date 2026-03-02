@@ -1,7 +1,7 @@
 const translations = {
   it: {
     tabs: {
-      home: 'Home',
+      home: 'Twensa',
       chat: 'Chat',
       news: 'Eventi e notizie',
       travel: 'Viaggi',
