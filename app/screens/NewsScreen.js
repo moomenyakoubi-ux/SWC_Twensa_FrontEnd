@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
-import { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
+import WebSidebar, { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
 import { WEB_TAB_BAR_WIDTH } from '../components/WebTabBar';
 import EventNewsCard from '../components/EventNewsCard';
 import useSession from '../auth/useSession';
@@ -38,6 +38,8 @@ const NewsScreen = ({ navigation }) => {
   const { session } = useSession();
   const { strings, isRTL } = useLanguage();
   const newsStrings = strings.news;
+  const menuStrings = strings.menu;
+  const sidebarTitle = strings.home?.greeting || newsStrings.title;
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -228,6 +230,12 @@ const NewsScreen = ({ navigation }) => {
               showsVerticalScrollIndicator={false}
             />
           </View>
+          <WebSidebar
+            title={sidebarTitle}
+            menuStrings={menuStrings}
+            navigation={navigation}
+            isRTL={isRTL}
+          />
         </View>
       </SafeAreaView>
     </ImageBackground>

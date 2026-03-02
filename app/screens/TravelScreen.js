@@ -17,7 +17,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
-import { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
+import WebSidebar, { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
 import { WEB_TAB_BAR_WIDTH } from '../components/WebTabBar';
 import { searchFlights } from '../services/flightsApi';
 
@@ -128,6 +128,8 @@ const TravelScreen = ({ navigation }) => {
   const isWeb = Platform.OS === 'web';
   const isAndroid = Platform.OS === 'android';
   const travelStrings = strings.travel;
+  const menuStrings = strings.menu;
+  const sidebarTitle = strings.home?.greeting || travelStrings.title;
   const tabRefs = useRef({
     origin: React.createRef(),
     destination: React.createRef(),
@@ -1283,6 +1285,12 @@ const TravelScreen = ({ navigation }) => {
               </View>
             </Modal>
           ) : null}
+          <WebSidebar
+            title={sidebarTitle}
+            menuStrings={menuStrings}
+            navigation={navigation}
+            isRTL={isRTL}
+          />
         </View>
       </SafeAreaView>
     </ImageBackground>

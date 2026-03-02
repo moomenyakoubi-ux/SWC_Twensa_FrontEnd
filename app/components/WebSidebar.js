@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 
 export const WEB_SIDE_MENU_WIDTH = 380;
-const MENU_ICON_SIZE = 22;
-const twensaWordmark = require('../../assets/brand/twensa-wordmark.png');
-const WORDMARK_ASPECT_RATIO = 468 / 133;
 
 const getMenuItems = (menuStrings) => [
   { label: menuStrings.addContact, icon: 'person-add', route: 'AddContact' },
@@ -28,134 +25,38 @@ const getActiveRouteNameFromState = (state) => {
   return currentRoute.name ?? null;
 };
 
-const resolveCurrentRouteName = (nav) => {
-  if (!nav) return null;
-
-  try {
-    if (nav?.isReady?.()) {
-      const directRoute = nav.getCurrentRoute?.();
-      if (directRoute?.name) return directRoute.name;
-    }
-  } catch (_error) {
-    // Ignore readiness timing errors and fallback to state traversal.
-  }
-
-  try {
-    const rootState = nav?.getRootState?.();
-    const routeFromRoot = getActiveRouteNameFromState(rootState);
-    if (routeFromRoot) return routeFromRoot;
-  } catch (_error) {
-    // Ignore readiness timing errors and fallback to getState.
-  }
-
-  try {
-    const state = nav?.getState?.();
-    return getActiveRouteNameFromState(state);
-  } catch (_error) {
-    return null;
-  }
+const resolveCurrentRouteName = (navigation) => {
+  const directRoute = navigation?.getCurrentRoute?.();
+  if (directRoute?.name) return directRoute.name;
+  const state = navigation?.getState?.();
+  return getActiveRouteNameFromState(state);
 };
 
-const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
+const WebSidebar = ({ title, menuStrings, navigation, isRTL }) => {
   if (Platform.OS !== 'web') return null;
 
   const { theme: appTheme } = useAppTheme();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
-  const nav = navigationRef?.current ?? navigationRef;
   const [hoveredRoute, setHoveredRoute] = useState(null);
-  const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(nav));
-  const [pendingRoute, setPendingRoute] = useState(null);
-
-  const getCurrentRouteName = () => {
-    const runtimeNav = navigationRef?.current ?? navigationRef;
-    return resolveCurrentRouteName(runtimeNav);
-  };
-
-  const safeNavigate = (routeName) => {
-    const runtimeNav = navigationRef?.current ?? navigationRef;
-    if (!runtimeNav) {
-      console.warn('[WebSidebar] navigation unavailable, queue:', routeName);
-      return false;
-    }
-
-    try {
-      if (runtimeNav?.isReady?.()) {
-        runtimeNav.navigate(routeName);
-        return true;
-      }
-      console.warn('[WebSidebar] navigation not ready, queue:', routeName);
-      return false;
-    } catch (_error) {
-      console.warn('[WebSidebar] navigation failed, queue:', routeName);
-      return false;
-    }
-  };
+  const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(navigation));
 
   useEffect(() => {
-    let unsubscribeState;
-    let unsubscribeFocus;
-    let retryInterval = null;
+    const syncActiveRoute = () => setActiveRoute(resolveCurrentRouteName(navigation));
+    syncActiveRoute();
+    if (!navigation?.addListener) return undefined;
 
-    const syncActiveRoute = () => {
-      setActiveRoute(getCurrentRouteName());
-    };
-
-    const attachListeners = () => {
-      const runtimeNav = navigationRef?.current ?? navigationRef;
-      syncActiveRoute();
-      if (!runtimeNav?.addListener) return false;
-      try {
-        unsubscribeState = runtimeNav.addListener('state', syncActiveRoute);
-        unsubscribeFocus = runtimeNav.addListener('focus', syncActiveRoute);
-        return true;
-      } catch (_error) {
-        return false;
-      }
-    };
-
-    const attachedNow = attachListeners();
-    if (!attachedNow) {
-      retryInterval = setInterval(() => {
-        const attached = attachListeners();
-        if (attached && retryInterval) {
-          clearInterval(retryInterval);
-          retryInterval = null;
-        }
-      }, 120);
-    }
+    const unsubscribeState = navigation.addListener('state', syncActiveRoute);
+    const unsubscribeFocus = navigation.addListener('focus', syncActiveRoute);
 
     return () => {
-      if (retryInterval) clearInterval(retryInterval);
       if (typeof unsubscribeState === 'function') unsubscribeState();
       if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
     };
-  }, [navigationRef]);
-
-  useEffect(() => {
-    if (!pendingRoute) return undefined;
-    const t = setInterval(() => {
-      const runtimeNav = navigationRef?.current ?? navigationRef;
-      try {
-        if (runtimeNav?.isReady?.()) {
-          runtimeNav.navigate(pendingRoute);
-          setPendingRoute(null);
-          clearInterval(t);
-        }
-      } catch (_error) {
-        // Keep retrying until navigation is ready.
-      }
-    }, 50);
-    return () => clearInterval(t);
-  }, [navigationRef, pendingRoute]);
+  }, [navigation]);
 
   return (
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
-      <Image
-        source={twensaWordmark}
-        style={[styles.menuTitleWordmark, isRTL && styles.menuTitleWordmarkRtl]}
-        resizeMode="contain"
-        accessibilityLabel={title}
-      />
+      <Text style={[styles.menuTitle, isRTL && styles.rtlText]}>{title}</Text>
       <View style={styles.menuItems}>
         {getMenuItems(menuStrings).map((item) => {
           const isActive = activeRoute === item.route;
@@ -185,14 +86,9 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
               onMouseEnter={() => setHoveredRoute(item.route)}
               onMouseLeave={() => setHoveredRoute((current) => (current === item.route ? null : current))}
               onPress={() => {
-                if (__DEV__) {
-                  console.log('[WebSidebar] press', item.route, 'current(before)=', getCurrentRouteName());
-                }
-                const didNavigate = safeNavigate(item.route);
-                if (!didNavigate) setPendingRoute(item.route);
-                if (__DEV__) {
-                  setTimeout(() => console.log('[WebSidebar] current(after)=', getCurrentRouteName()), 0);
-                }
+                if (navigation?.isReady?.()) navigation.navigate(item.route);
+                else if (navigation?.navigate) navigation.navigate(item.route);
+                setActiveRoute(item.route);
               }}
             >
               <Ionicons name={item.icon} size={22} color={iconColor} style={styles.menuIcon} />
@@ -213,14 +109,13 @@ const createStyles = (appTheme) =>
       bottom: 0,
       right: 0,
       width: WEB_SIDE_MENU_WIDTH,
-      paddingHorizontal: appTheme.spacing.md,
+      paddingHorizontal: appTheme.spacing.lg,
       paddingTop: appTheme.spacing.xl + appTheme.spacing.sm,
       backgroundColor: appTheme.colors.card,
       borderLeftWidth: 1,
       borderLeftColor: appTheme.colors.divider,
       ...appTheme.shadow.card,
       gap: appTheme.spacing.lg,
-      alignItems: 'flex-start',
     },
     sideMenuWeb: {
       position: 'fixed',
@@ -233,17 +128,11 @@ const createStyles = (appTheme) =>
     sideMenuRtl: {
       alignItems: 'flex-end',
     },
-    menuTitleWordmark: {
-      alignSelf: 'flex-start',
-      height: 36,
-      aspectRatio: WORDMARK_ASPECT_RATIO,
-      marginLeft: 0,
+    menuTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: appTheme.colors.text,
       marginTop: Platform.OS === 'android' ? appTheme.spacing.sm : 0,
-    },
-    menuTitleWordmarkRtl: {
-      alignSelf: 'flex-end',
-      marginRight: 0,
-      marginLeft: 0,
     },
     menuItems: {
       gap: appTheme.spacing.sm,
@@ -279,7 +168,7 @@ const createStyles = (appTheme) =>
       flexDirection: 'row-reverse',
     },
     menuIcon: {
-      width: MENU_ICON_SIZE,
+      width: 24,
       textAlign: 'center',
       transitionProperty: 'color',
       transitionDuration: '200ms',

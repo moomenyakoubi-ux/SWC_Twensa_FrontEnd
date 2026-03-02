@@ -8,37 +8,7 @@ const ANIMATION_DURATION = 220;
 
 export const WEB_TAB_BAR_WIDTH = COLLAPSED_TAB_BAR_WIDTH;
 
-const getActiveRouteNameFromState = (state) => {
-  if (!state?.routes?.length) return null;
-  const currentRoute = state.routes[state.index ?? 0];
-  if (!currentRoute) return null;
-  if (currentRoute.state) return getActiveRouteNameFromState(currentRoute.state);
-  return currentRoute.name ?? null;
-};
-
-const resolveCurrentRouteName = ({ state, navigation, navigationRef }) => {
-  const nav = navigationRef?.current ?? navigationRef;
-
-  try {
-    if (nav?.isReady?.()) {
-      const currentRoute = nav.getCurrentRoute?.();
-      if (currentRoute?.name) return currentRoute.name;
-    }
-  } catch (_error) {
-    // Ignore readiness timing errors and fallback to navigator state.
-  }
-
-  const routeFromState = getActiveRouteNameFromState(state);
-  if (routeFromState) return routeFromState;
-
-  try {
-    return navigation?.getCurrentRoute?.()?.name || null;
-  } catch (_error) {
-    return null;
-  }
-};
-
-const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
+const WebTabBar = ({ state, descriptors, navigation }) => {
   if (Platform.OS !== 'web') return null;
 
   const { theme: appTheme } = useAppTheme();
@@ -46,16 +16,6 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const widthAnim = useRef(new Animated.Value(COLLAPSED_TAB_BAR_WIDTH)).current;
   const labelOpacity = useRef(new Animated.Value(0)).current;
-  const currentRouteName = useMemo(
-    () => resolveCurrentRouteName({ state, navigation, navigationRef }),
-    [state, navigation, navigationRef],
-  );
-
-  useEffect(() => {
-    if (!__DEV__) return;
-    console.log('[WebTabBar] current=', currentRouteName);
-    console.log('[WebTabBar] currentRouteName=', currentRouteName, 'tabs=', state?.routes?.map((r) => r.name));
-  }, [currentRouteName, state]);
 
   useEffect(() => {
     Animated.parallel([
@@ -90,7 +50,7 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      {state.routes.map((route) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isHidden =
           options?.tabBarStyle?.display === 'none' || options?.tabBarItemStyle?.display === 'none';
@@ -107,7 +67,7 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
               : route.name;
         const labelText = typeof label === 'string' ? label : route.name;
 
-        const isFocused = currentRouteName === route.name;
+        const isFocused = state.index === index;
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',

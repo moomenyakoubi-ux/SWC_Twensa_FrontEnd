@@ -4,7 +4,6 @@ import {
   Alert,
   Animated,
   FlatList,
-  Image,
   ImageBackground,
   Linking,
   Platform,
@@ -29,8 +28,6 @@ import { supabase } from '../lib/supabase';
 import { fetchHomeFeed } from '../services/contentApi';
 
 const backgroundImage = require('../images/image1.png');
-const twensaWordmark = require('../../assets/brand/twensa-wordmark.png');
-const WORDMARK_ASPECT_RATIO = 468 / 133;
 const HOME_PAGE_SIZE = 20;
 const EVENT_NEWS_DETAIL_ROUTES = ['EventNewsDetail', 'NewsDetail', 'EventDetail'];
 const resolveFeedItemType = (item) => {
@@ -355,12 +352,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.overlay}>
         <View style={[styles.header, isRTL && styles.headerRtl, isWeb && styles.headerWeb]}>
           <View style={styles.headerText}>
-            <Image
-              source={twensaWordmark}
-              style={styles.wordmark}
-              resizeMode="contain"
-              accessibilityLabel={homeStrings.greeting}
-            />
+            <Text style={[styles.greeting, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
             <Text style={[styles.subtitle, isRTL && styles.rtlText]}>{homeStrings.subtitle}</Text>
           </View>
           {!isWeb ? (
@@ -415,12 +407,7 @@ const HomeScreen = ({ navigation }) => {
               },
             ]}
           >
-            <Image
-              source={twensaWordmark}
-              style={styles.menuTitleWordmark}
-              resizeMode="contain"
-              accessibilityLabel={homeStrings.greeting}
-            />
+            <Text style={[styles.menuTitle, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
             <View style={styles.menuItems}>
               {[
                 { label: menuStrings.addContact, icon: 'person-add', route: 'AddContact' },
@@ -475,15 +462,13 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   headerWeb: {
-    paddingLeft: WEB_TAB_BAR_WIDTH + theme.spacing.md,
+    paddingLeft: theme.spacing.lg + WEB_TAB_BAR_WIDTH,
   },
   headerRtl: {
     flexDirection: 'row-reverse',
   },
   headerText: {
     flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
   },
   menuButton: {
     width: 44,
@@ -504,10 +489,10 @@ const styles = StyleSheet.create({
   cmsItemWrapWeb: {
     alignItems: 'center',
   },
-  wordmark: {
-    alignSelf: 'flex-start',
-    height: 46,
-    aspectRatio: WORDMARK_ASPECT_RATIO,
+  greeting: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: theme.colors.card,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
@@ -588,10 +573,10 @@ const styles = StyleSheet.create({
     ...theme.shadow.card,
     gap: theme.spacing.lg,
   },
-  menuTitleWordmark: {
-    alignSelf: 'flex-start',
-    height: 36,
-    aspectRatio: WORDMARK_ASPECT_RATIO,
+  menuTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: theme.colors.text,
     marginTop: Platform.OS === 'android' ? theme.spacing.sm : 0,
   },
   menuItems: {

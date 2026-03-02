@@ -18,7 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
-import { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
+import WebSidebar, { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
 import { WEB_TAB_BAR_WIDTH } from '../components/WebTabBar';
 import useSession from '../auth/useSession';
 import { supabase } from '../lib/supabase';
@@ -97,6 +97,8 @@ const ChatScreen = ({ navigation, route }) => {
   const { strings, isRTL, language } = useLanguage();
   const { user } = useSession();
   const chatStrings = strings.chat;
+  const menuStrings = strings.menu;
+  const sidebarTitle = strings.home?.greeting || chatStrings.title;
   const [activeChatId, setActiveChatId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
@@ -762,6 +764,12 @@ const ChatScreen = ({ navigation, route }) => {
           </KeyboardAvoidingView>
         )}
         {isAiMode && aiChatContent}
+        <WebSidebar
+          title={sidebarTitle}
+          menuStrings={menuStrings}
+          navigation={navigation}
+          isRTL={isRTL}
+        />
       </View>
     </ImageBackground>
   );

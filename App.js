@@ -1,13 +1,12 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StatusBar, View } from 'react-native';
-import { NavigationContainer, DefaultTheme as NavigationTheme } from '@react-navigation/native';
+import { ActivityIndicator, Platform, StatusBar, View } from 'react-native';
+import { NavigationContainer, DefaultTheme as NavigationTheme, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { navigationRef } from './navigationRef';
 import HomeScreen from './app/screens/HomeScreen';
 import ChatScreen from './app/screens/ChatScreen';
 import NewsScreen from './app/screens/NewsScreen';
@@ -41,7 +40,6 @@ import { isUpdatePasswordLink } from './app/utils/authRedirect';
 
 const sharedBackgroundAsset = require('./app/images/image1.png');
 const chatBackgroundAsset = require('./app/images/image2.png');
-const twensaElephantIcon = require('./assets/brand/twensa-elephant.png');
 
 const Tab = createBottomTabNavigator();
 const AUTH_ROUTES = {
@@ -80,10 +78,11 @@ const replaceAuthPath = (route) => {
   window.history.replaceState({}, '', nextPath);
 };
 
-const AppTabs = ({ navigationRef }) => {
+const AppTabs = () => {
   const { strings, isRTL } = useLanguage();
   const { theme: appTheme } = useAppTheme();
   const isWeb = Platform.OS === 'web';
+  const navigation = useNavigation();
   const hiddenTabOptions = {
     tabBarButton: () => null,
     tabBarStyle: { display: 'none' },
@@ -92,24 +91,8 @@ const AppTabs = ({ navigationRef }) => {
 
   const screenOptions = ({ route }) => ({
     tabBarIcon: ({ color, size }) => {
-      if (route.name === 'Home') {
-        const isWebPlatform = Platform.OS === 'web';
-        const target = isWebPlatform ? 36 : size;
-
-        return (
-          <Image
-            source={twensaElephantIcon}
-            style={{
-              width: target,
-              height: target,
-              tintColor: color,
-            }}
-            resizeMode="contain"
-          />
-        );
-      }
-
       const icons = {
+        Home: 'home',
         Chat: 'chatbubble-ellipses',
         Notizie: 'newspaper',
         Viaggi: 'airplane',
@@ -144,18 +127,14 @@ const AppTabs = ({ navigationRef }) => {
     headerShown: false,
   });
 
-  const navigatorProps = isWeb ? { tabBar: (props) => <WebTabBar {...props} navigationRef={navigationRef} /> } : {};
+  const navigatorProps = isWeb ? { tabBar: (props) => <WebTabBar {...props} /> } : {};
 
   const sidebarTitle = strings.home?.greeting || strings.menu?.userProfile;
 
   return (
     <>
       <Tab.Navigator screenOptions={screenOptions} {...navigatorProps}>
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: isWeb ? 'Twensa' : strings.tabs.home }}
-      />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: strings.tabs.home }} />
       <Tab.Screen name="Chat" component={ChatScreen} options={{ tabBarLabel: strings.tabs.chat }} />
       <Tab.Screen name="Notizie" component={NewsScreen} options={{ tabBarLabel: strings.tabs.news }} />
       <Tab.Screen name="Viaggi" component={TravelScreen} options={{ tabBarLabel: strings.tabs.travel }} />
@@ -233,7 +212,7 @@ const AppTabs = ({ navigationRef }) => {
       <WebSidebar
         title={sidebarTitle}
         menuStrings={strings.menu}
-        navigationRef={navigationRef}
+        navigation={navigation}
         isRTL={isRTL}
       />
     </>
@@ -242,14 +221,6 @@ const AppTabs = ({ navigationRef }) => {
 
 const MainApp = () => {
   const { theme: appTheme, isDark } = useAppTheme();
-  const getCurrentRouteName = () => {
-    try {
-      if (!navigationRef?.isReady?.()) return null;
-      return navigationRef.getCurrentRoute?.()?.name ?? null;
-    } catch (_error) {
-      return null;
-    }
-  };
   const navigationTheme = useMemo(
     () => ({
       ...NavigationTheme,
@@ -268,18 +239,9 @@ const MainApp = () => {
   );
 
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      theme={navigationTheme}
-      onReady={() => {
-        console.log('[NAV] READY');
-      }}
-      onStateChange={() => {
-        console.log('[NAV] route=', getCurrentRouteName());
-      }}
-    >
+    <NavigationContainer theme={navigationTheme}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      <AppTabs navigationRef={navigationRef} />
+      <AppTabs />
     </NavigationContainer>
   );
 };
