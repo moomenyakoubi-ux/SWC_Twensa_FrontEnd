@@ -29,10 +29,31 @@ const getActiveRouteNameFromState = (state) => {
 };
 
 const resolveCurrentRouteName = (nav) => {
-  const directRoute = nav?.getCurrentRoute?.();
-  if (directRoute?.name) return directRoute.name;
-  const state = nav?.getState?.();
-  return getActiveRouteNameFromState(state);
+  if (!nav) return null;
+
+  try {
+    if (nav?.isReady?.()) {
+      const directRoute = nav.getCurrentRoute?.();
+      if (directRoute?.name) return directRoute.name;
+    }
+  } catch (_error) {
+    // Ignore readiness timing errors and fallback to state traversal.
+  }
+
+  try {
+    const rootState = nav?.getRootState?.();
+    const routeFromRoot = getActiveRouteNameFromState(rootState);
+    if (routeFromRoot) return routeFromRoot;
+  } catch (_error) {
+    // Ignore readiness timing errors and fallback to getState.
+  }
+
+  try {
+    const state = nav?.getState?.();
+    return getActiveRouteNameFromState(state);
+  } catch (_error) {
+    return null;
+  }
 };
 
 const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
@@ -43,16 +64,37 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
   const nav = navigationRef?.current ?? navigationRef;
   const [hoveredRoute, setHoveredRoute] = useState(null);
   const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(nav));
+  const [pendingRoute, setPendingRoute] = useState(null);
+
+  const getCurrentRouteName = () => {
+    const runtimeNav = navigationRef?.current ?? navigationRef;
+    return resolveCurrentRouteName(runtimeNav);
+  };
+
+  const safeNavigate = (routeName) => {
+    const runtimeNav = navigationRef?.current ?? navigationRef;
+    if (!runtimeNav) {
+      console.warn('[WebSidebar] navigation unavailable, queue:', routeName);
+      return false;
+    }
+
+    try {
+      if (runtimeNav?.isReady?.()) {
+        runtimeNav.navigate(routeName);
+        return true;
+      }
+      console.warn('[WebSidebar] navigation not ready, queue:', routeName);
+      return false;
+    } catch (_error) {
+      console.warn('[WebSidebar] navigation failed, queue:', routeName);
+      return false;
+    }
+  };
 
   useEffect(() => {
     let unsubscribeState;
-    let retryTimer = null;
-    let retries = 0;
-
-    const getCurrentRouteName = () => {
-      const runtimeNav = navigationRef?.current ?? navigationRef;
-      return resolveCurrentRouteName(runtimeNav);
-    };
+    let unsubscribeFocus;
+    let retryInterval = null;
 
     const syncActiveRoute = () => {
       setActiveRoute(getCurrentRouteName());
@@ -61,23 +103,50 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
     const attachListeners = () => {
       const runtimeNav = navigationRef?.current ?? navigationRef;
       syncActiveRoute();
-      if (!runtimeNav?.addListener) {
-        if (retries < 2) {
-          retries += 1;
-          retryTimer = setTimeout(attachListeners, 120);
-        }
-        return;
+      if (!runtimeNav?.addListener) return false;
+      try {
+        unsubscribeState = runtimeNav.addListener('state', syncActiveRoute);
+        unsubscribeFocus = runtimeNav.addListener('focus', syncActiveRoute);
+        return true;
+      } catch (_error) {
+        return false;
       }
-      unsubscribeState = runtimeNav.addListener('state', syncActiveRoute);
     };
 
-    attachListeners();
+    const attachedNow = attachListeners();
+    if (!attachedNow) {
+      retryInterval = setInterval(() => {
+        const attached = attachListeners();
+        if (attached && retryInterval) {
+          clearInterval(retryInterval);
+          retryInterval = null;
+        }
+      }, 120);
+    }
 
     return () => {
-      if (retryTimer) clearTimeout(retryTimer);
+      if (retryInterval) clearInterval(retryInterval);
       if (typeof unsubscribeState === 'function') unsubscribeState();
+      if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
     };
-  }, [navigationRef, nav]);
+  }, [navigationRef]);
+
+  useEffect(() => {
+    if (!pendingRoute) return undefined;
+    const t = setInterval(() => {
+      const runtimeNav = navigationRef?.current ?? navigationRef;
+      try {
+        if (runtimeNav?.isReady?.()) {
+          runtimeNav.navigate(pendingRoute);
+          setPendingRoute(null);
+          clearInterval(t);
+        }
+      } catch (_error) {
+        // Keep retrying until navigation is ready.
+      }
+    }, 50);
+    return () => clearInterval(t);
+  }, [navigationRef, pendingRoute]);
 
   return (
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
@@ -116,13 +185,11 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
               onMouseEnter={() => setHoveredRoute(item.route)}
               onMouseLeave={() => setHoveredRoute((current) => (current === item.route ? null : current))}
               onPress={() => {
-                const runtimeNav = navigationRef?.current ?? navigationRef;
-                const getCurrentRouteName = () => resolveCurrentRouteName(navigationRef?.current ?? navigationRef);
                 if (__DEV__) {
                   console.log('[WebSidebar] press', item.route, 'current(before)=', getCurrentRouteName());
                 }
-                if (runtimeNav?.isReady?.()) runtimeNav.navigate(item.route);
-                else if (runtimeNav?.navigate) runtimeNav.navigate(item.route);
+                const didNavigate = safeNavigate(item.route);
+                if (!didNavigate) setPendingRoute(item.route);
                 if (__DEV__) {
                   setTimeout(() => console.log('[WebSidebar] current(after)=', getCurrentRouteName()), 0);
                 }

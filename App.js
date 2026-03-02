@@ -1,12 +1,13 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Platform, StatusBar, View } from 'react-native';
-import { NavigationContainer, DefaultTheme as NavigationTheme, useNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme as NavigationTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { navigationRef } from './navigationRef';
 import HomeScreen from './app/screens/HomeScreen';
 import ChatScreen from './app/screens/ChatScreen';
 import NewsScreen from './app/screens/NewsScreen';
@@ -241,7 +242,14 @@ const AppTabs = ({ navigationRef }) => {
 
 const MainApp = () => {
   const { theme: appTheme, isDark } = useAppTheme();
-  const navigationRef = useNavigationContainerRef();
+  const getCurrentRouteName = () => {
+    try {
+      if (!navigationRef?.isReady?.()) return null;
+      return navigationRef.getCurrentRoute?.()?.name ?? null;
+    } catch (_error) {
+      return null;
+    }
+  };
   const navigationTheme = useMemo(
     () => ({
       ...NavigationTheme,
@@ -263,10 +271,11 @@ const MainApp = () => {
     <NavigationContainer
       ref={navigationRef}
       theme={navigationTheme}
+      onReady={() => {
+        console.log('[NAV] READY');
+      }}
       onStateChange={() => {
-        if (!__DEV__) return;
-        const r = navigationRef.getCurrentRoute?.();
-        console.log('[NAV] currentRoute:', r?.name);
+        console.log('[NAV] route=', getCurrentRouteName());
       }}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />

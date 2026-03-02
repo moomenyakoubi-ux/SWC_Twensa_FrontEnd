@@ -17,16 +17,25 @@ const getActiveRouteNameFromState = (state) => {
 };
 
 const resolveCurrentRouteName = ({ state, navigation, navigationRef }) => {
-  const navFromRef = navigationRef?.current ?? navigationRef;
-  const fromRefRoute = navFromRef?.getCurrentRoute?.()?.name;
-  if (fromRefRoute) return fromRefRoute;
-  const fromState = getActiveRouteNameFromState(state);
-  if (fromState) return fromState;
-  const fromRefState = getActiveRouteNameFromState(navFromRef?.getState?.());
-  if (fromRefState) return fromRefState;
-  const fromNavigationState = getActiveRouteNameFromState(navigation?.getState?.());
-  if (fromNavigationState) return fromNavigationState;
-  return navigation?.getCurrentRoute?.()?.name ?? null;
+  const nav = navigationRef?.current ?? navigationRef;
+
+  try {
+    if (nav?.isReady?.()) {
+      const currentRoute = nav.getCurrentRoute?.();
+      if (currentRoute?.name) return currentRoute.name;
+    }
+  } catch (_error) {
+    // Ignore readiness timing errors and fallback to navigator state.
+  }
+
+  const routeFromState = getActiveRouteNameFromState(state);
+  if (routeFromState) return routeFromState;
+
+  try {
+    return navigation?.getCurrentRoute?.()?.name || null;
+  } catch (_error) {
+    return null;
+  }
 };
 
 const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
@@ -44,6 +53,7 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
 
   useEffect(() => {
     if (!__DEV__) return;
+    console.log('[WebTabBar] current=', currentRouteName);
     console.log('[WebTabBar] currentRouteName=', currentRouteName, 'tabs=', state?.routes?.map((r) => r.name));
   }, [currentRouteName, state]);
 
