@@ -260,7 +260,15 @@ const MainApp = () => {
   );
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      onStateChange={() => {
+        if (!__DEV__) return;
+        const r = navigationRef.getCurrentRoute?.();
+        console.log('[NAV] currentRoute:', r?.name);
+      }}
+    >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <AppTabs navigationRef={navigationRef} />
     </NavigationContainer>

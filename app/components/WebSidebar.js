@@ -46,13 +46,16 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
 
   useEffect(() => {
     let unsubscribeState;
-    let unsubscribeFocus;
     let retryTimer = null;
     let retries = 0;
 
-    const syncActiveRoute = () => {
+    const getCurrentRouteName = () => {
       const runtimeNav = navigationRef?.current ?? navigationRef;
-      setActiveRoute(resolveCurrentRouteName(runtimeNav));
+      return resolveCurrentRouteName(runtimeNav);
+    };
+
+    const syncActiveRoute = () => {
+      setActiveRoute(getCurrentRouteName());
     };
 
     const attachListeners = () => {
@@ -66,7 +69,6 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
         return;
       }
       unsubscribeState = runtimeNav.addListener('state', syncActiveRoute);
-      unsubscribeFocus = runtimeNav.addListener('focus', syncActiveRoute);
     };
 
     attachListeners();
@@ -74,7 +76,6 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
     return () => {
       if (retryTimer) clearTimeout(retryTimer);
       if (typeof unsubscribeState === 'function') unsubscribeState();
-      if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
     };
   }, [navigationRef, nav]);
 
@@ -82,7 +83,7 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
       <Image
         source={twensaWordmark}
-        style={[styles.menuTitleWordmark, isRTL ? styles.menuTitleWordmarkRtl : styles.menuTitleWordmarkLtr]}
+        style={[styles.menuTitleWordmark, isRTL && styles.menuTitleWordmarkRtl]}
         resizeMode="contain"
         accessibilityLabel={title}
       />
@@ -116,9 +117,15 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
               onMouseLeave={() => setHoveredRoute((current) => (current === item.route ? null : current))}
               onPress={() => {
                 const runtimeNav = navigationRef?.current ?? navigationRef;
+                const getCurrentRouteName = () => resolveCurrentRouteName(navigationRef?.current ?? navigationRef);
+                if (__DEV__) {
+                  console.log('[WebSidebar] press', item.route, 'current(before)=', getCurrentRouteName());
+                }
                 if (runtimeNav?.isReady?.()) runtimeNav.navigate(item.route);
                 else if (runtimeNav?.navigate) runtimeNav.navigate(item.route);
-                if (__DEV__) console.log('[WebSidebar] navigate ->', item.route);
+                if (__DEV__) {
+                  setTimeout(() => console.log('[WebSidebar] current(after)=', getCurrentRouteName()), 0);
+                }
               }}
             >
               <Ionicons name={item.icon} size={22} color={iconColor} style={styles.menuIcon} />
@@ -163,15 +170,12 @@ const createStyles = (appTheme) =>
       alignSelf: 'flex-start',
       height: 36,
       aspectRatio: WORDMARK_ASPECT_RATIO,
+      marginLeft: 0,
       marginTop: Platform.OS === 'android' ? appTheme.spacing.sm : 0,
-    },
-    menuTitleWordmarkLtr: {
-      marginLeft: MENU_ICON_SIZE + appTheme.spacing.md,
-      marginRight: 0,
     },
     menuTitleWordmarkRtl: {
       alignSelf: 'flex-end',
-      marginRight: MENU_ICON_SIZE + appTheme.spacing.md,
+      marginRight: 0,
       marginLeft: 0,
     },
     menuItems: {

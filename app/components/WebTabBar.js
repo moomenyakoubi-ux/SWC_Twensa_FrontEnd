@@ -17,19 +17,16 @@ const getActiveRouteNameFromState = (state) => {
 };
 
 const resolveCurrentRouteName = ({ state, navigation, navigationRef }) => {
-  const fromState = getActiveRouteNameFromState(state);
-  if (fromState) return fromState;
-
   const navFromRef = navigationRef?.current ?? navigationRef;
   const fromRefRoute = navFromRef?.getCurrentRoute?.()?.name;
   if (fromRefRoute) return fromRefRoute;
+  const fromState = getActiveRouteNameFromState(state);
+  if (fromState) return fromState;
   const fromRefState = getActiveRouteNameFromState(navFromRef?.getState?.());
   if (fromRefState) return fromRefState;
-
   const fromNavigationState = getActiveRouteNameFromState(navigation?.getState?.());
   if (fromNavigationState) return fromNavigationState;
-  const directRoute = navigation?.getCurrentRoute?.();
-  return directRoute?.name ?? null;
+  return navigation?.getCurrentRoute?.()?.name ?? null;
 };
 
 const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
@@ -44,6 +41,11 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
     () => resolveCurrentRouteName({ state, navigation, navigationRef }),
     [state, navigation, navigationRef],
   );
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[WebTabBar] currentRouteName=', currentRouteName, 'tabs=', state?.routes?.map((r) => r.name));
+  }, [currentRouteName, state]);
 
   useEffect(() => {
     Animated.parallel([
