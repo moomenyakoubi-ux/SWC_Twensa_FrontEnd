@@ -123,6 +123,7 @@ const createStyles = (appTheme) =>
       borderLeftColor: appTheme.colors.divider,
       ...appTheme.shadow.card,
       gap: appTheme.spacing.lg,
+      alignItems: 'flex-start',
     },
     sideMenuWeb: {
       position: 'fixed',
@@ -139,6 +140,7 @@ const createStyles = (appTheme) =>
       alignSelf: 'flex-start',
       height: 36,
       aspectRatio: WORDMARK_ASPECT_RATIO,
+      marginLeft: 0,
       marginTop: Platform.OS === 'android' ? appTheme.spacing.sm : 0,
     },
     menuItems: {

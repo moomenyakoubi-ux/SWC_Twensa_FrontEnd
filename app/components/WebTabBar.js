@@ -8,12 +8,31 @@ const ANIMATION_DURATION = 220;
 
 export const WEB_TAB_BAR_WIDTH = COLLAPSED_TAB_BAR_WIDTH;
 
+const getActiveRouteNameFromState = (state) => {
+  if (!state?.routes?.length) return null;
+  const currentRoute = state.routes[state.index ?? 0];
+  if (!currentRoute) return null;
+  if (currentRoute.state) return getActiveRouteNameFromState(currentRoute.state);
+  return currentRoute.name ?? null;
+};
+
+const resolveCurrentRouteName = (navigation, fallbackState) => {
+  const directRoute = navigation?.getCurrentRoute?.();
+  if (directRoute?.name) return directRoute.name;
+  if (fallbackState) return getActiveRouteNameFromState(fallbackState);
+  const state = navigation?.getState?.();
+  return getActiveRouteNameFromState(state);
+};
+
 const WebTabBar = ({ state, descriptors, navigation }) => {
   if (Platform.OS !== 'web') return null;
 
   const { theme: appTheme } = useAppTheme();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentRouteName, setCurrentRouteName] = useState(() =>
+    resolveCurrentRouteName(navigation, state),
+  );
   const widthAnim = useRef(new Animated.Value(COLLAPSED_TAB_BAR_WIDTH)).current;
   const labelOpacity = useRef(new Animated.Value(0)).current;
 
@@ -31,6 +50,24 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
       }),
     ]).start();
   }, [isExpanded, labelOpacity, widthAnim]);
+
+  useEffect(() => {
+    setCurrentRouteName(resolveCurrentRouteName(navigation, state));
+  }, [navigation, state]);
+
+  useEffect(() => {
+    const syncActiveRoute = () => setCurrentRouteName(resolveCurrentRouteName(navigation));
+    syncActiveRoute();
+    if (!navigation?.addListener) return undefined;
+
+    const unsubscribeState = navigation.addListener('state', syncActiveRoute);
+    const unsubscribeFocus = navigation.addListener('focus', syncActiveRoute);
+
+    return () => {
+      if (typeof unsubscribeState === 'function') unsubscribeState();
+      if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
+    };
+  }, [navigation]);
 
   const labelWidth = widthAnim.interpolate({
     inputRange: [COLLAPSED_TAB_BAR_WIDTH, EXPANDED_TAB_BAR_WIDTH],
@@ -50,7 +87,7 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      {state.routes.map((route, index) => {
+      {state.routes.map((route) => {
         const { options } = descriptors[route.key];
         const isHidden =
           options?.tabBarStyle?.display === 'none' || options?.tabBarItemStyle?.display === 'none';
@@ -67,7 +104,7 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
               : route.name;
         const labelText = typeof label === 'string' ? label : route.name;
 
-        const isFocused = state.index === index;
+        const isFocused = currentRouteName === route.name;
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
