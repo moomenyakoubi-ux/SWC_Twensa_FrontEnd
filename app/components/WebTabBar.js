@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
 
 const COLLAPSED_TAB_BAR_WIDTH = 88;
 const EXPANDED_TAB_BAR_WIDTH = 244;
 const ANIMATION_DURATION = 220;
-const HOME_ICON_VISUAL_SCALE = 1.25;
 
 export const WEB_TAB_BAR_WIDTH = COLLAPSED_TAB_BAR_WIDTH;
 
@@ -18,10 +17,10 @@ const getActiveRouteNameFromState = (state) => {
 };
 
 const resolveCurrentRouteName = ({ state, navigation, navigationRef }) => {
-  const navigationFromRef = navigationRef?.current;
-  const fromRefRoute = navigationFromRef?.getCurrentRoute?.()?.name;
+  const navFromRef = navigationRef?.current ?? navigationRef;
+  const fromRefRoute = navFromRef?.getCurrentRoute?.()?.name;
   if (fromRefRoute) return fromRefRoute;
-  const fromRefState = getActiveRouteNameFromState(navigationFromRef?.getState?.());
+  const fromRefState = getActiveRouteNameFromState(navFromRef?.getState?.());
   if (fromRefState) return fromRefState;
   const fromState = getActiveRouteNameFromState(state);
   if (fromState) return fromState;
@@ -39,8 +38,9 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const widthAnim = useRef(new Animated.Value(COLLAPSED_TAB_BAR_WIDTH)).current;
   const labelOpacity = useRef(new Animated.Value(0)).current;
-  const [currentRouteName, setCurrentRouteName] = useState(() =>
-    resolveCurrentRouteName({ state, navigation, navigationRef }),
+  const currentRouteName = useMemo(
+    () => resolveCurrentRouteName({ state, navigation, navigationRef }),
+    [state, navigation, navigationRef],
   );
 
   useEffect(() => {
@@ -57,51 +57,6 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
       }),
     ]).start();
   }, [isExpanded, labelOpacity, widthAnim]);
-
-  useEffect(() => {
-    setCurrentRouteName(resolveCurrentRouteName({ state, navigation, navigationRef }));
-  }, [navigation, navigationRef, state]);
-
-  useEffect(() => {
-    let unsubscribeState;
-    let unsubscribeFocus;
-    let unsubscribeRefState;
-    let unsubscribeRefFocus;
-    let frameId = null;
-    let isMounted = true;
-
-    const syncActiveRoute = () => {
-      if (!isMounted) return;
-      setCurrentRouteName(resolveCurrentRouteName({ state, navigation, navigationRef }));
-    };
-
-    const attachRefListeners = () => {
-      if (!isMounted) return;
-      const navRefCurrent = navigationRef?.current;
-      if (!navRefCurrent?.addListener) {
-        frameId = requestAnimationFrame(attachRefListeners);
-        return;
-      }
-      unsubscribeRefState = navRefCurrent.addListener('state', syncActiveRoute);
-      unsubscribeRefFocus = navRefCurrent.addListener('focus', syncActiveRoute);
-    };
-
-    syncActiveRoute();
-    if (navigation?.addListener) {
-      unsubscribeState = navigation.addListener('state', syncActiveRoute);
-      unsubscribeFocus = navigation.addListener('focus', syncActiveRoute);
-    }
-    attachRefListeners();
-
-    return () => {
-      isMounted = false;
-      if (frameId) cancelAnimationFrame(frameId);
-      if (typeof unsubscribeState === 'function') unsubscribeState();
-      if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
-      if (typeof unsubscribeRefState === 'function') unsubscribeRefState();
-      if (typeof unsubscribeRefFocus === 'function') unsubscribeRefFocus();
-    };
-  }, [navigation, navigationRef, state]);
 
   const labelWidth = widthAnim.interpolate({
     inputRange: [COLLAPSED_TAB_BAR_WIDTH, EXPANDED_TAB_BAR_WIDTH],
@@ -185,7 +140,7 @@ const WebTabBar = ({ state, descriptors, navigation, navigationRef }) => {
 
               return (
                 <>
-                  {icon ? <View style={route.name === 'Home' ? styles.homeIconScale : undefined}>{icon}</View> : null}
+                  {icon}
                   <Animated.View
                     style={[styles.labelWrap, { width: labelWidth, marginLeft: labelGap, opacity: labelOpacity }]}
                   >
@@ -265,9 +220,6 @@ const createStyles = (appTheme) =>
     },
     labelWrap: {
       overflow: 'hidden',
-    },
-    homeIconScale: {
-      transform: [{ scale: HOME_ICON_VISUAL_SCALE }],
     },
     label: {
       fontSize: 14,

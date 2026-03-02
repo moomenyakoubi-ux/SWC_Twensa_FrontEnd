@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   headerWeb: {
-    paddingLeft: theme.spacing.lg + WEB_TAB_BAR_WIDTH,
+    paddingLeft: WEB_TAB_BAR_WIDTH + theme.spacing.md,
   },
   headerRtl: {
     flexDirection: 'row-reverse',

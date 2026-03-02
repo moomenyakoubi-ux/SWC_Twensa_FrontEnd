@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Platform, StatusBar, View } from 'react-native';
-import { NavigationContainer, DefaultTheme as NavigationTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme as NavigationTheme, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
@@ -41,6 +41,8 @@ import { isUpdatePasswordLink } from './app/utils/authRedirect';
 const sharedBackgroundAsset = require('./app/images/image1.png');
 const chatBackgroundAsset = require('./app/images/image2.png');
 const twensaElephantIcon = require('./assets/brand/twensa-elephant.png');
+const ELEPHANT_ICON_VISUAL_SCALE_WEB = 1.55;
+const ELEPHANT_ICON_VISUAL_SCALE_NATIVE = 1.25;
 
 const Tab = createBottomTabNavigator();
 const AUTH_ROUTES = {
@@ -92,13 +94,17 @@ const AppTabs = ({ navigationRef }) => {
   const screenOptions = ({ route }) => ({
     tabBarIcon: ({ color, size }) => {
       if (route.name === 'Home') {
+        const isWebPlatform = Platform.OS === 'web';
+        const base = isWebPlatform ? size + 4 : size;
+
         return (
           <Image
             source={twensaElephantIcon}
             style={{
-              width: size,
-              height: size,
+              width: base,
+              height: base,
               tintColor: color,
+              transform: [{ scale: isWebPlatform ? ELEPHANT_ICON_VISUAL_SCALE_WEB : ELEPHANT_ICON_VISUAL_SCALE_NATIVE }],
             }}
             resizeMode="contain"
           />
@@ -236,8 +242,9 @@ const AppTabs = ({ navigationRef }) => {
   );
 };
 
-const MainApp = ({ navigationRef }) => {
+const MainApp = () => {
   const { theme: appTheme, isDark } = useAppTheme();
+  const navigationRef = useNavigationContainerRef();
   const navigationTheme = useMemo(
     () => ({
       ...NavigationTheme,
@@ -320,7 +327,6 @@ const ProfileLanguageSync = () => {
 const AppContent = () => {
   const { theme: appTheme } = useAppTheme();
   const { user, loading, session } = useSession();
-  const navigationRef = React.useRef(null);
   const [isUpdatePasswordEntry] = useState(() => getAuthRouteFromPath() === AUTH_ROUTES.update);
   const [forcedAuthRoute, setForcedAuthRoute] = useState(null);
   const initialAuthRoute =
@@ -381,7 +387,7 @@ const AppContent = () => {
   return (
     <>
       <ProfileLanguageSync />
-      <MainApp navigationRef={navigationRef} />
+      <MainApp />
     </>
   );
 };

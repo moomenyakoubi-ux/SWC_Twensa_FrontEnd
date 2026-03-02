@@ -28,11 +28,10 @@ const getActiveRouteNameFromState = (state) => {
   return currentRoute.name ?? null;
 };
 
-const resolveCurrentRouteName = (navigationRef) => {
-  const navigation = navigationRef?.current;
-  const directRoute = navigation?.getCurrentRoute?.();
+const resolveCurrentRouteName = (nav) => {
+  const directRoute = nav?.getCurrentRoute?.();
   if (directRoute?.name) return directRoute.name;
-  const state = navigation?.getState?.();
+  const state = nav?.getState?.();
   return getActiveRouteNameFromState(state);
 };
 
@@ -41,42 +40,29 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
 
   const { theme: appTheme } = useAppTheme();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
+  const nav = navigationRef?.current ?? navigationRef;
   const [hoveredRoute, setHoveredRoute] = useState(null);
-  const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(navigationRef));
+  const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(nav));
 
   useEffect(() => {
     let unsubscribeState;
     let unsubscribeFocus;
-    let frameId = null;
-    let isMounted = true;
 
     const syncActiveRoute = () => {
-      if (!isMounted) return;
-      setActiveRoute(resolveCurrentRouteName(navigationRef));
+      setActiveRoute(resolveCurrentRouteName(nav));
     };
 
-    const attachListeners = () => {
-      if (!isMounted) return;
-      const navigation = navigationRef?.current;
-      syncActiveRoute();
-      if (!navigation?.addListener) {
-        frameId = requestAnimationFrame(attachListeners);
-        return;
-      }
-
-      unsubscribeState = navigation.addListener('state', syncActiveRoute);
-      unsubscribeFocus = navigation.addListener('focus', syncActiveRoute);
-    };
-
-    attachListeners();
+    syncActiveRoute();
+    if (nav?.addListener) {
+      unsubscribeState = nav.addListener('state', syncActiveRoute);
+      unsubscribeFocus = nav.addListener('focus', syncActiveRoute);
+    }
 
     return () => {
-      isMounted = false;
-      if (frameId) cancelAnimationFrame(frameId);
       if (typeof unsubscribeState === 'function') unsubscribeState();
       if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
     };
-  }, [navigationRef]);
+  }, [nav]);
 
   return (
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
@@ -115,8 +101,8 @@ const WebSidebar = ({ title, menuStrings, navigationRef, isRTL }) => {
               onMouseEnter={() => setHoveredRoute(item.route)}
               onMouseLeave={() => setHoveredRoute((current) => (current === item.route ? null : current))}
               onPress={() => {
-                const navigation = navigationRef?.current;
-                if (navigation?.navigate) navigation.navigate(item.route);
+                if (nav?.isReady?.()) nav.navigate(item.route);
+                else if (nav?.navigate) nav.navigate(item.route);
               }}
             >
               <Ionicons name={item.icon} size={22} color={iconColor} style={styles.menuIcon} />
@@ -137,7 +123,7 @@ const createStyles = (appTheme) =>
       bottom: 0,
       right: 0,
       width: WEB_SIDE_MENU_WIDTH,
-      paddingHorizontal: appTheme.spacing.lg,
+      paddingHorizontal: appTheme.spacing.md,
       paddingTop: appTheme.spacing.xl + appTheme.spacing.sm,
       backgroundColor: appTheme.colors.card,
       borderLeftWidth: 1,
