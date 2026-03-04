@@ -56,22 +56,26 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
   const tabActiveRoute = state.routes[state.index];
   const tabActiveRouteName = tabActiveRoute?.name;
   
-  // Determina quale tab deve apparire come "selected"
-  // Se la route attiva è visibile nella tab bar, usala
-  // Altrimenti usa la route attiva del tab navigator
-  let selectedTabName = tabActiveRouteName;
-  
-  if (actualActiveRouteName) {
-    // Cerca se la route attuale è una delle tab visibili
-    const isCurrentRouteVisibleTab = state.routes.some((route) => {
-      return route.name === actualActiveRouteName && isRouteVisible(route, descriptors);
+  // LOG DEBUG - rimuovere dopo fix
+  if (__DEV__) {
+    console.log('[WebTabBar Debug]', {
+      actualActiveRouteName,
+      tabActiveRouteName,
+      stateIndex: state.index,
+      stateRouteNames: state.routes.map(r => r.name),
+      rootStateIndex: rootState?.index,
+      rootStateRouteNames: rootState?.routes?.map(r => r.name),
     });
-    
-    if (isCurrentRouteVisibleTab) {
-      selectedTabName = actualActiveRouteName;
-    }
-    // Se la route attuale NON è una tab visibile, selectedTabName rimane tabActiveRouteName
-    // Ma in realtà vogliamo che NESSUNA tab sia selezionata in quel caso
+  }
+  
+  // Verifica se la route attuale è una tab visibile
+  const isCurrentRouteVisible = actualActiveRouteName ? state.routes.some((r) => 
+    r.name === actualActiveRouteName && isRouteVisible(r, descriptors)
+  ) : false;
+  
+  // LOG DEBUG
+  if (__DEV__) {
+    console.log('[WebTabBar Debug] isCurrentRouteVisible:', isCurrentRouteVisible);
   }
 
   useEffect(() => {
@@ -123,18 +127,15 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
               : route.name;
         const labelText = typeof label === 'string' ? label : route.name;
 
-        // La tab è focused se:
-        // 1. La route attuale è questa tab (quando la route è visibile)
-        // 2. OPPURE se siamo su una schermata nascosta e questa era l'ultima tab attiva
-        // Ma in realtà vogliamo che quando siamo su schermata nascosta, NESSUNA tab sia focused
+        // La tab è focused SOLO se:
+        // 1. La route attuale è visibile
+        // 2. E questa tab corrisponde alla route attuale
+        const isFocused = isCurrentRouteVisible && route.name === actualActiveRouteName;
         
-        const isCurrentRouteVisible = state.routes.some((r) => 
-          r.name === actualActiveRouteName && isRouteVisible(r, descriptors)
-        );
-        
-        const isFocused = isCurrentRouteVisible 
-          ? route.name === actualActiveRouteName 
-          : false; // Se siamo su schermata nascosta, nessuna tab è focused
+        // LOG DEBUG per Home
+        if (__DEV__ && route.name === 'Home') {
+          console.log('[WebTabBar Debug] Home isFocused:', isFocused, 'route.name:', route.name, 'actualActiveRouteName:', actualActiveRouteName);
+        }
 
         const onPress = () => {
           const event = navigation.emit({
