@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
+import { useNavigationContext } from '../context/NavigationContext';
 
 export const WEB_SIDE_MENU_WIDTH = 380;
 
@@ -36,12 +37,17 @@ const WebSidebar = ({ title, menuStrings, navigation, isRTL }) => {
   if (Platform.OS !== 'web') return null;
 
   const { theme: appTheme } = useAppTheme();
+  const { setCurrentRouteName } = useNavigationContext();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
   const [hoveredRoute, setHoveredRoute] = useState(null);
   const [activeRoute, setActiveRoute] = useState(() => resolveCurrentRouteName(navigation));
 
   useEffect(() => {
-    const syncActiveRoute = () => setActiveRoute(resolveCurrentRouteName(navigation));
+    const syncActiveRoute = () => {
+      const routeName = resolveCurrentRouteName(navigation);
+      setActiveRoute(routeName);
+      setCurrentRouteName(routeName);
+    };
     syncActiveRoute();
     if (!navigation?.addListener) return undefined;
 
@@ -52,7 +58,7 @@ const WebSidebar = ({ title, menuStrings, navigation, isRTL }) => {
       if (typeof unsubscribeState === 'function') unsubscribeState();
       if (typeof unsubscribeFocus === 'function') unsubscribeFocus();
     };
-  }, [navigation]);
+  }, [navigation, setCurrentRouteName]);
 
   return (
     <View style={[styles.sideMenu, isRTL && styles.sideMenuRtl, styles.sideMenuWeb]}>
@@ -89,6 +95,7 @@ const WebSidebar = ({ title, menuStrings, navigation, isRTL }) => {
                 if (navigation?.isReady?.()) navigation.navigate(item.route);
                 else if (navigation?.navigate) navigation.navigate(item.route);
                 setActiveRoute(item.route);
+                setCurrentRouteName(item.route);
               }}
             >
               <Ionicons name={item.icon} size={22} color={iconColor} style={styles.menuIcon} />

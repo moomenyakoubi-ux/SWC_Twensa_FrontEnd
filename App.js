@@ -37,6 +37,7 @@ import useSession from './app/auth/useSession';
 import useProfile from './app/profile/useProfile';
 import ErrorBoundary from './app/components/ErrorBoundary';
 import { isUpdatePasswordLink } from './app/utils/authRedirect';
+import { NavigationProvider } from './app/context/NavigationContext';
 
 const sharedBackgroundAsset = require('./app/images/image1.png');
 const chatBackgroundAsset = require('./app/images/image2.png');
@@ -137,7 +138,7 @@ const AppTabs = () => {
     headerShown: false,
   });
 
-  const navigatorProps = isWeb ? { tabBar: (props) => <WebTabBar key={props.state?.index} {...props} /> } : {};
+  const navigatorProps = isWeb ? { tabBar: (props) => <WebTabBar {...props} /> } : {};
 
   const sidebarTitle = strings.home?.greeting || strings.menu?.userProfile;
 
@@ -388,9 +389,11 @@ export default function App() {
       <LanguageProvider>
         <ContactsProvider>
           <PostsProvider>
-            <SafeAreaProvider>
-              <AppContent />
-            </SafeAreaProvider>
+            <NavigationProvider>
+              <SafeAreaProvider>
+                <AppContent />
+              </SafeAreaProvider>
+            </NavigationProvider>
           </PostsProvider>
         </ContactsProvider>
       </LanguageProvider>
