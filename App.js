@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StatusBar, View } from 'react-native';
+import { ActivityIndicator, Platform, StatusBar, View } from 'react-native';
 import { NavigationContainer, DefaultTheme as NavigationTheme, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,20 +89,10 @@ const AppTabs = () => {
     tabBarItemStyle: { display: 'none' },
   };
 
-  const HomeBrandIcon = ({ color, size }) => (
-    <Image
-      source={require('./assets/brand/twensa-elephant.png')}
-      style={{ width: size, height: size, tintColor: color }}
-      resizeMode="contain"
-    />
-  );
-
   const screenOptions = ({ route }) => ({
     tabBarIcon: ({ color, size }) => {
-      if (route.name === 'Home') {
-        return <HomeBrandIcon color={color} size={size} />;
-      }
       const icons = {
+        Home: 'home',
         Chat: 'chatbubble-ellipses',
         Notizie: 'newspaper',
         Viaggi: 'airplane',

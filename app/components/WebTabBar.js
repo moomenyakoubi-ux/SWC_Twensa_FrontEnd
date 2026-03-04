@@ -53,8 +53,7 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isHidden =
-          options?.tabBarStyle?.display === 'none' ||
-          options?.tabBarItemStyle?.display === 'none';
+          options?.tabBarStyle?.display === 'none' || options?.tabBarItemStyle?.display === 'none';
 
         if (isHidden) {
           return null;
@@ -69,7 +68,6 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
         const labelText = typeof label === 'string' ? label : route.name;
 
         const isFocused = state.index === index;
-
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
