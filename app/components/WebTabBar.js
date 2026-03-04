@@ -17,23 +17,6 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
   const widthAnim = useRef(new Animated.Value(COLLAPSED_TAB_BAR_WIDTH)).current;
   const labelOpacity = useRef(new Animated.Value(0)).current;
 
-  // Ottieni la route attualmente visualizzata (più affidabile di state.index)
-  const currentRoute = navigation.getCurrentRoute?.();
-  const currentRouteName = currentRoute?.name;
-  
-  // Lista dei nomi delle tab visibili nella barra
-  const visibleTabNames = useMemo(() => {
-    return state.routes
-      .filter((route) => {
-        const descriptor = descriptors[route.key];
-        const isHidden =
-          descriptor?.options?.tabBarStyle?.display === 'none' ||
-          descriptor?.options?.tabBarItemStyle?.display === 'none';
-        return !isHidden;
-      })
-      .map((route) => route.name);
-  }, [state.routes, descriptors]);
-
   useEffect(() => {
     Animated.parallel([
       Animated.timing(widthAnim, {
@@ -61,6 +44,9 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
     extrapolate: 'clamp',
   });
 
+  // Nome della route attualmente attiva (dallo stato del navigatore)
+  const activeRouteName = state.routes[state.index]?.name;
+
   return (
     <Animated.View
       style={[styles.container, { width: widthAnim }]}
@@ -84,9 +70,9 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
               : route.name;
         const labelText = typeof label === 'string' ? label : route.name;
 
-        // isFocused è true solo se questa route è quella attualmente visualizzata
-        // e fa parte delle tab visibili
-        const isFocused = currentRouteName === route.name && visibleTabNames.includes(currentRouteName);
+        // La tab è focused solo se il suo nome corrisponde alla route attiva
+        const isFocused = route.name === activeRouteName;
+
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
