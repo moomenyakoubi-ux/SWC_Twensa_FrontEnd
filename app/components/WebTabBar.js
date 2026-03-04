@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useNavigationContext } from '../context/NavigationContext';
 import { useAppTheme } from '../context/ThemeContext';
 
 const COLLAPSED_TAB_BAR_WIDTH = 88;
@@ -13,7 +12,6 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
   if (Platform.OS !== 'web') return null;
 
   const { theme: appTheme } = useAppTheme();
-  const { currentRouteName, setCurrentRouteName } = useNavigationContext();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
   const [isExpanded, setIsExpanded] = useState(false);
   const widthAnim = useRef(new Animated.Value(COLLAPSED_TAB_BAR_WIDTH)).current;
@@ -46,15 +44,9 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
     extrapolate: 'clamp',
   });
 
-  const tabActiveRouteName = state.routes[state.index]?.name;
-  const activeRouteName = currentRouteName || tabActiveRouteName;
-  
-  // Sincronizza il context quando cambia la tab attiva (quando navighi dalla tab bar)
-  useEffect(() => {
-    if (tabActiveRouteName && tabActiveRouteName !== currentRouteName) {
-      setCurrentRouteName(tabActiveRouteName);
-    }
-  }, [tabActiveRouteName, currentRouteName, setCurrentRouteName]);
+  // DEBUG
+  const activeRoute = state.routes[state.index];
+  const activeRouteName = activeRoute?.name;
 
   return (
     <Animated.View
@@ -64,12 +56,11 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
     >
       {/* DEBUG INFO */}
       <View style={{ position: 'absolute', bottom: 20, left: 10, backgroundColor: 'yellow', padding: 4, zIndex: 100 }}>
-        <Text style={{ fontSize: 10 }}>ctx: {currentRouteName || 'null'}</Text>
-        <Text style={{ fontSize: 10 }}>tab: {tabActiveRouteName || 'null'}</Text>
+        <Text style={{ fontSize: 10 }}>active: {activeRouteName || 'null'}</Text>
         <Text style={{ fontSize: 10 }}>idx: {state.index}</Text>
       </View>
       
-      {state.routes.map((route) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isHidden =
           options?.tabBarStyle?.display === 'none' ||
@@ -87,7 +78,8 @@ const WebTabBar = ({ state, descriptors, navigation }) => {
               : route.name;
         const labelText = typeof label === 'string' ? label : route.name;
 
-        const isFocused = route.name === activeRouteName;
+        // Stessa logica delle altre icone: confronta l'indice
+        const isFocused = index === state.index;
 
         const onPress = () => {
           const event = navigation.emit({
