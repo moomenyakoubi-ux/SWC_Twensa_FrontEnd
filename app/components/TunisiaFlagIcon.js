@@ -23,14 +23,14 @@ const TunisiaFlagIcon = ({ size = 24, color, isHome = false }) => {
   const cy = s / 2;
   const r = (s / 2) - (isHome ? 1.5 : 1);
   
-  // Raggi proporzionali
-  const whiteRadius = r * 0.40;      // Cerchio bianco
-  const moonRadius = r * 0.22;       // Raggio mezzaluna
-  const starRadius = r * 0.14;       // Raggio stella
+  // Raggi proporzionali (ingranditi)
+  const whiteRadius = r * 0.52;      // Cerchio bianco più grande
+  const moonRadius = r * 0.28;       // Raggio mezzaluna più grande
+  const starRadius = r * 0.18;       // Raggio stella più grande
   
   // Posizioni: mezzaluna a sinistra, stella a destra
-  const moonX = cx - r * 0.06;       // Leggermente a sinistra del centro
-  const starX = cx + r * 0.12;       // A destra della mezzaluna
+  const moonX = cx - r * 0.08;       // Leggermente a sinistra del centro
+  const starX = cx + r * 0.15;       // A destra della mezzaluna
   
   // Genera i punti della stella a 5 punte
   const getStarPoints = (centerX, centerY, outerRadius, innerRadius) => {
