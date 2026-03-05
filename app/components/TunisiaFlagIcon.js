@@ -10,8 +10,8 @@ import Svg, { Circle, Path, Polygon, Defs, ClipPath, G } from 'react-native-svg'
  * - Stella a 5 punte rossa
  */
 const TunisiaFlagIcon = ({ size = 24, color, isHome = false }) => {
-  // Scala per il tasto Home (più grande)
-  const scale = isHome ? 1.6 : 1.0;
+  // Scala per il tasto Home (leggermente più grande delle altre icone)
+  const scale = isHome ? 1.15 : 1.0;
   const s = size * scale;
   
   // Colore rosso ufficiale Tunisia

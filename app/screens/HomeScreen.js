@@ -353,7 +353,10 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.overlay}>
         <View style={[styles.header, isRTL && styles.headerRtl, isWeb && styles.headerWeb]}>
           <View style={styles.headerText}>
-            <Text style={[styles.greeting, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
+            <View style={[styles.greetingContainer, isRTL && styles.greetingContainerRtl]}>
+              <TunisiaFlagIcon size={28} />
+              <Text style={[styles.greeting, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
+            </View>
             <Text style={[styles.subtitle, isRTL && styles.rtlText]}>{homeStrings.subtitle}</Text>
           </View>
           {!isWeb ? (
@@ -493,11 +496,19 @@ const styles = StyleSheet.create({
   cmsItemWrapWeb: {
     alignItems: 'center',
   },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+  },
+  greetingContainerRtl: {
+    flexDirection: 'row-reverse',
+  },
   greeting: {
     fontSize: 28,
     fontWeight: '800',
     color: theme.colors.card,
-    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     color: theme.colors.card,

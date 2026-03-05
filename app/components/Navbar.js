@@ -3,8 +3,9 @@ import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, 
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 import { WEB_TAB_BAR_WIDTH } from './WebTabBar';
+import TunisiaFlagIcon from './TunisiaFlagIcon';
 
-const Navbar = ({ title, rightContent, onBack, backLabel, isRTL = false, isElevated = false }) => {
+const Navbar = ({ title, rightContent, onBack, backLabel, isRTL = false, isElevated = false, showFlag = false }) => {
   const { theme: appTheme } = useAppTheme();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
   const isWeb = Platform.OS === 'web';
@@ -24,6 +25,11 @@ const Navbar = ({ title, rightContent, onBack, backLabel, isRTL = false, isEleva
               <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={22} color={appTheme.colors.card} />
             </TouchableOpacity>
           ) : null}
+          {showFlag && (
+            <View style={styles.flagContainer}>
+              <TunisiaFlagIcon size={28} />
+            </View>
+          )}
           <Text style={[styles.title, isRTL && styles.rtlText]}>{title}</Text>
         </View>
         {rightContent ? <View>{rightContent}</View> : null}
@@ -65,6 +71,9 @@ const createStyles = (appTheme) =>
     },
     leftGroupRtl: {
       flexDirection: 'row-reverse',
+    },
+    flagContainer: {
+      marginRight: appTheme.spacing.xs,
     },
     title: {
       fontSize: 22,
