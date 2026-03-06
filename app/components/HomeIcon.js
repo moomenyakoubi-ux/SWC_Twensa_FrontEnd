@@ -12,7 +12,7 @@ const HomeIcon = ({ size = 40, color, focused }) => {
   
   return (
     <Image
-      source={require('../assets/twensa-icon.png')}
+      source={require('../../assets/twensa-icon.png')}
       style={[styles.icon, { width: size, height: size, opacity }]}
       resizeMode="contain"
     />
