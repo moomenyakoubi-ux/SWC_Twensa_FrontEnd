@@ -25,6 +25,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { WEB_SIDE_MENU_WIDTH } from '../components/WebSidebar';
 import { WEB_TAB_BAR_WIDTH } from '../components/WebTabBar';
 import TunisiaFlagIcon from '../components/TunisiaFlagIcon';
+import HomeIcon from '../components/HomeIcon';
 import { supabase } from '../lib/supabase';
 import { fetchHomeFeed } from '../services/contentApi';
 
@@ -353,6 +354,9 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.overlay}>
         <View style={[styles.header, isRTL && styles.headerRtl, isWeb && styles.headerWeb]}>
           <View style={styles.headerText}>
+            <View style={[styles.logoContainer, isRTL && styles.logoContainerRtl]}>
+              <HomeIcon size={48} />
+            </View>
             <View style={[styles.greetingContainer, isRTL && styles.greetingContainerRtl]}>
               <TunisiaFlagIcon size={28} />
               <Text style={[styles.greeting, isRTL && styles.rtlText]}>{homeStrings.greeting}</Text>
@@ -495,6 +499,13 @@ const styles = StyleSheet.create({
   },
   cmsItemWrapWeb: {
     alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
+  },
+  logoContainerRtl: {
+    alignItems: 'flex-end',
   },
   greetingContainer: {
     flexDirection: 'row',

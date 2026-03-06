@@ -10,22 +10,21 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0066CC"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.momen.ai.Twensa"
     },
     "android": {
       "adaptiveIcon": {
-      
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0066CC"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.momen.ai.Twensa"
     },
-    "web": {
-     
-    },
+    "web": {},
     "extra": {
       "eas": {
         "projectId": "aac8a5f4-a5f1-4c24-ad18-7ec90d83ce7a"

@@ -31,6 +31,7 @@ import { ThemeProvider, useAppTheme } from './app/context/ThemeContext';
 import WebTabBar from './app/components/WebTabBar';
 import WebSidebar from './app/components/WebSidebar';
 import TunisiaFlagIcon from './app/components/TunisiaFlagIcon';
+import HomeIcon from './app/components/HomeIcon';
 import AuthScreen from './app/screens/AuthScreen';
 import ForgotPasswordScreen from './app/screens/ForgotPasswordScreen';
 import UpdatePasswordScreen from './app/screens/UpdatePasswordScreen';
@@ -94,7 +95,7 @@ const AppTabs = () => {
     tabBarIcon: ({ color, size, focused }) => {
       // Icona personalizzata per Home (bandiera Tunisia) - PIÙ GRANDE
       if (route.name === 'Home') {
-        return <TunisiaFlagIcon size={size} color={focused ? undefined : color} isHome={true} />;
+        return <HomeIcon size={size + 4} />;
       }
       
       const icons = {
