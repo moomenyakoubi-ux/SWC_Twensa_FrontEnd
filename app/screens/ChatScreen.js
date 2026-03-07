@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Animated,
   Image,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -32,7 +31,7 @@ import {
   subscribeToMessages,
 } from '../services/chatService';
 
-const backgroundImage = require('../images/image2.png');
+
 const DOT_COLOR = '#333';
 
 const getInitials = (value) =>
@@ -671,13 +670,7 @@ const ChatScreen = ({ navigation, route }) => {
   );
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      defaultSource={backgroundImage}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <View style={[styles.overlay, isWeb && styles.overlayWeb]}>
+    <View style={[styles.container, isWeb && styles.containerWeb]}>
         {!activeChat && <ChatList />}
 
         {activeChat && !isAiMode && (
@@ -771,7 +764,7 @@ const ChatScreen = ({ navigation, route }) => {
           isRTL={isRTL}
         />
       </View>
-    </ImageBackground>
+    </View>
   );
 };
 
@@ -779,18 +772,11 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  background: {
+  container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  backgroundImage: {
-    resizeMode: 'cover',
-    alignSelf: 'center',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(12, 27, 51, 0.78)',
-  },
-  overlayWeb: {
+  containerWeb: {
     paddingLeft: WEB_TAB_BAR_WIDTH,
   },
   listContainer: {
@@ -805,7 +791,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   listMuted: {
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.muted,
     fontWeight: '600',
   },
   chatList: {
@@ -813,14 +799,15 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.xl,
   },
   chatCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    borderColor: theme.colors.border,
+    ...theme.shadow.card,
   },
   avatar: {
     width: 56,
@@ -841,7 +828,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   avatarText: {
-    color: theme.colors.card,
+    color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 16,
   },
@@ -855,19 +842,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   chatName: {
-    color: theme.colors.card,
+    color: theme.colors.text,
     fontSize: 17,
     fontWeight: '800',
   },
   chatStatus: {
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.muted,
     fontSize: 12,
   },
   chatSubtitle: {
-    color: 'rgba(255,255,255,0.8)',
+    color: theme.colors.muted,
   },
   chatLast: {
-    color: 'rgba(255,255,255,0.85)',
+    color: theme.colors.text,
     fontWeight: '600',
   },
   openPill: {
@@ -880,7 +867,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.sm,
   },
   openPillText: {
-    color: theme.colors.card,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   chatWrapper: {
@@ -906,12 +893,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: theme.colors.border,
+    ...theme.shadow.card,
   },
   avatarLarge: {
     width: 64,
@@ -932,7 +920,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarLargeText: {
-    color: theme.colors.card,
+    color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 18,
   },
@@ -940,12 +928,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   heroTitle: {
-    color: theme.colors.card,
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '800',
   },
   heroStatus: {
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.colors.muted,
   },
   messages: {
     flexGrow: 1,
@@ -992,7 +980,7 @@ const styles = StyleSheet.create({
     color: theme.colors.card,
   },
   aiText: {
-    color: theme.colors.secondary,
+    color: theme.colors.text,
   },
   inputRow: {
     flexDirection: 'row',
@@ -1033,7 +1021,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
   },
   typingLabel: {
-    color: theme.colors.card,
+    color: theme.colors.muted,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -1054,13 +1042,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: theme.colors.primary,
   },
   loadMoreButtonDisabled: {
     opacity: 0.7,
   },
   loadMoreText: {
-    color: theme.colors.card,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   loadingRow: {
@@ -1081,17 +1069,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
   },
   debugTitle: {
-    color: theme.colors.card,
+    color: theme.colors.text,
     fontSize: 12,
     fontWeight: '700',
   },
   debugItem: {
-    color: 'rgba(255,255,255,0.85)',
+    color: theme.colors.muted,
     fontSize: 12,
     marginTop: 4,
   },
   debugMuted: {
-    color: 'rgba(255,255,255,0.6)',
+    color: theme.colors.muted,
     fontSize: 12,
     marginTop: 4,
   },

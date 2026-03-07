@@ -23,8 +23,8 @@ const shadow = {
 };
 
 export const lightColors = {
-  primary: '#E70013',
-  secondary: '#E70013',
+  primary: '#0066CC',
+  secondary: '#0066CC',
   background: '#F7F8FB',
   card: '#FFFFFF',
   text: '#0E141B',
@@ -38,8 +38,8 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  primary: '#E70013',
-  secondary: '#E70013',
+  primary: '#0066CC',
+  secondary: '#0066CC',
   background: '#0F141C',
   card: '#1A2230',
   text: '#F3F6FC',

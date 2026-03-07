@@ -4,7 +4,6 @@ import {
   Alert,
   Animated,
   FlatList,
-  ImageBackground,
   Linking,
   Platform,
   Pressable,
@@ -27,7 +26,7 @@ import HomeIcon from '../components/HomeIcon';
 import { supabase } from '../lib/supabase';
 import { fetchHomeFeed } from '../services/contentApi';
 
-const backgroundImage = require('../images/image1.png');
+
 const HOME_PAGE_SIZE = 20;
 const EVENT_NEWS_DETAIL_ROUTES = ['EventNewsDetail', 'NewsDetail', 'EventDetail'];
 const resolveFeedItemType = (item) => {
@@ -345,13 +344,7 @@ const HomeScreen = ({ navigation }) => {
   }, [loadingMoreFeed]);
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      defaultSource={backgroundImage}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <View style={styles.overlay}>
+    <View style={styles.container}>
         {/* Header rimosso per web e mobile - solo menu hamburger per mobile */}
         {!isWeb && (
           <View style={[styles.mobileHeader, isRTL && styles.mobileHeaderRtl]}>
@@ -360,7 +353,7 @@ const HomeScreen = ({ navigation }) => {
               style={styles.menuButton}
               onPress={() => setIsMenuOpen(true)}
             >
-              <Ionicons name="menu" size={26} color={theme.colors.card} />
+              <Ionicons name="menu" size={26} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
         )}
@@ -445,16 +438,9 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
-  },
-  backgroundImage: {
-    resizeMode: 'cover',
-    alignSelf: 'center',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(12, 27, 51, 0.6)',
+    backgroundColor: theme.colors.background,
   },
   
   // Mobile Header - solo bottone menu
@@ -473,7 +459,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: theme.colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -519,7 +505,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.xs + 2,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -530,8 +516,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   emptyText: {
-    color: theme.colors.card,
-    opacity: 0.95,
+    color: theme.colors.muted,
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 320,
