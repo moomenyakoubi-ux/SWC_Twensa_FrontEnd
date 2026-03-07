@@ -4,7 +4,7 @@
     "slug": "Darna",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/darna-twensa-icon.png",
+    "icon": "./assets/darna-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
