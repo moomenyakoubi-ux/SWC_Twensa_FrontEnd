@@ -1222,7 +1222,7 @@ const TravelScreen = ({ navigation }) => {
   // Flights - Original Content
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={[styles.container, isWeb && styles.containerWeb]}>
+      <View style={[styles.container, isWeb && styles.containerWeb, styles.containerWithPadding]}>
           <TouchableOpacity
             style={[
               styles.backButtonUnified, 
@@ -1254,8 +1254,7 @@ const TravelScreen = ({ navigation }) => {
             renderItem={renderTrip}
             contentContainerStyle={[
               styles.list, 
-              isWeb && styles.webList,
-              !isWeb && styles.listContentPadding
+              isWeb && styles.webList
             ]}
             ListHeaderComponent={
               <View style={[styles.filtersContainer, isWeb && styles.filtersWeb]}>
@@ -1521,16 +1520,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Spazio per il contenuto sotto il bottone indietro
-  listContentPadding: {
-    paddingTop: Platform.OS === 'ios' ? 100 : 80,
-  },
+
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   containerWeb: {
     paddingLeft: WEB_TAB_BAR_WIDTH,
+  },
+  containerWithPadding: {
+    paddingTop: Platform.OS === 'ios' ? 80 : 60, // Spazio per il bottone indietro (stesso di ComingSoonScreen)
   },
   // Original styles
   background: {
