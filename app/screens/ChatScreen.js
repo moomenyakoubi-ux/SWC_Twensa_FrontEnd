@@ -572,12 +572,20 @@ const ChatScreen = ({ navigation, route }) => {
       style={styles.headerBackButton}
       accessibilityLabel={chatStrings.backToList || 'Tutte le chat'}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      activeOpacity={0.8}
     >
-      <Ionicons
-        name={isRTL ? 'arrow-forward' : 'arrow-back'}
-        size={20}
-        color={theme.colors.card}
-      />
+      <LinearGradient
+        colors={['#0066CC', '#00CCFF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.backButtonGradient}
+      >
+        <Ionicons
+          name={isRTL ? 'chevron-forward' : 'chevron-back'}
+          size={22}
+          color="#FFFFFF"
+        />
+      </LinearGradient>
     </TouchableOpacity>
   ) : null;
 
@@ -880,14 +888,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   headerBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    ...theme.shadow.card,
+  },
+  backButtonGradient: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   chatHero: {
     flexDirection: 'row',
