@@ -85,6 +85,11 @@ const styles = StyleSheet.create({
   },
   backButtonWeb: {
     left: WEB_TAB_BAR_WIDTH + 20,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   backButtonGradient: {
     width: 44,

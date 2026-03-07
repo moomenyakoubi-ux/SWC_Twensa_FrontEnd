@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  ImageBackground,
   Platform,
   Pressable,
   SafeAreaView,
@@ -19,7 +18,6 @@ import EventNewsCard from '../components/EventNewsCard';
 import useSession from '../auth/useSession';
 import { fetchEventsNews } from '../services/contentApi';
 
-const backgroundImage = require('../images/image1.png');
 const PAGE_SIZE = 10;
 
 const dedupeById = (items) => {
@@ -206,15 +204,8 @@ const NewsScreen = ({ navigation }) => {
   }, [loadingMore]);
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      defaultSource={backgroundImage}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.overlay, isWeb && styles.overlayWeb]}>
-          <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, isWeb && styles.containerWeb]}>
             <FlatList
               data={items}
               keyExtractor={keyExtractor}
@@ -229,7 +220,6 @@ const NewsScreen = ({ navigation }) => {
               contentContainerStyle={[styles.list, isWeb && styles.webList]}
               showsVerticalScrollIndicator={false}
             />
-          </View>
           <WebSidebar
             title={sidebarTitle}
             menuStrings={menuStrings}
@@ -238,29 +228,16 @@ const NewsScreen = ({ navigation }) => {
           />
         </View>
       </SafeAreaView>
-    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
-  },
-  overlayWeb: {
+  containerWeb: {
     paddingLeft: WEB_TAB_BAR_WIDTH,
-  },
-  backgroundImage: {
-    resizeMode: 'cover',
-    alignSelf: 'center',
-    width: '100%',
-    height: '100%',
   },
   container: {
     flex: 1,

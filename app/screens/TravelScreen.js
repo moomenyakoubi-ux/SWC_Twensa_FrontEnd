@@ -1221,14 +1221,8 @@ const TravelScreen = ({ navigation }) => {
 
   // Flights - Original Content
   return (
-    <ImageBackground
-      source={backgroundImage}
-      defaultSource={backgroundImage}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.overlay, isWeb && styles.overlayWeb]}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.container, isWeb && styles.containerWeb]}>
           <TouchableOpacity
             style={[
               styles.backButtonUnified, 
@@ -1428,9 +1422,8 @@ const TravelScreen = ({ navigation }) => {
             navigation={navigation}
             isRTL={isRTL}
           />
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -1515,6 +1508,11 @@ const styles = StyleSheet.create({
   },
   backButtonUnifiedWeb: {
     left: WEB_TAB_BAR_WIDTH + 20,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   backButtonGradient: {
     width: 44,
@@ -1527,26 +1525,20 @@ const styles = StyleSheet.create({
   listContentPadding: {
     paddingTop: Platform.OS === 'ios' ? 100 : 80,
   },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  containerWeb: {
+    paddingLeft: WEB_TAB_BAR_WIDTH,
+  },
   // Original styles
   background: {
     flex: 1,
   },
   safeArea: {
     flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
-    position: 'relative',
-  },
-  overlayWeb: {
-    paddingLeft: WEB_TAB_BAR_WIDTH,
-  },
-  backgroundImage: {
-    resizeMode: 'cover',
-    alignSelf: 'center',
-    width: '100%',
-    height: '100%',
+    backgroundColor: theme.colors.background,
   },
   list: {
     paddingHorizontal: theme.spacing.lg,

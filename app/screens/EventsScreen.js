@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, ImageBackground, SafeAreaView, StyleSheet, View } from 'react-native';
+import { FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import fakeEvents from '../data/fakeEvents';
@@ -7,7 +7,6 @@ import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
 import { getBestMediaInfo } from '../utils/media';
 
-const backgroundImage = require('../images/image1.png');
 const DEFAULT_CONTENT_ASPECT_RATIO = 4 / 5;
 
 const EventsScreen = () => {
@@ -15,16 +14,9 @@ const EventsScreen = () => {
   const eventsStrings = strings.events;
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      defaultSource={backgroundImage}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.overlay}>
-          <Navbar title={eventsStrings.title} isRTL={isRTL} />
-          <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Navbar title={eventsStrings.title} isRTL={isRTL} />
             <FlatList
               data={fakeEvents}
               keyExtractor={(item) => item.id}
@@ -50,9 +42,7 @@ const EventsScreen = () => {
               showsVerticalScrollIndicator={false}
             />
           </View>
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+    </SafeAreaView>
   );
 };
 
