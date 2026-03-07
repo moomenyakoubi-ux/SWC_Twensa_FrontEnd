@@ -391,22 +391,32 @@ const HomeScreen = ({ navigation }) => {
           <Animated.View
             style={[
               styles.sideMenu,
-              { width: sideMenuWidth || 280 },
+              { width: sideMenuWidth || 320 },
               {
                 transform: [
                   {
                     translateX: slideAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [sideMenuWidth || 280, 0],
+                      outputRange: [sideMenuWidth || 320, 0],
                     }),
                   },
                 ],
               },
             ]}
           >
-            <View style={[styles.menuLogoContainer, isRTL && styles.menuLogoContainerRtl]}>
-              <HomeIcon size={40} />
+            {/* Menu Header */}
+            <View style={styles.menuHeader}>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsMenuOpen(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
             </View>
+
+            {/* Menu Items - Stile Web */}
             <View style={styles.menuItems}>
               {[
                 { label: menuStrings.addContact, icon: 'person-add', route: 'AddContact' },
@@ -425,11 +435,21 @@ const HomeScreen = ({ navigation }) => {
                     setIsMenuOpen(false);
                     navigation.navigate(item.route);
                   }}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name={item.icon} size={22} color={theme.colors.secondary} />
+                  <View style={styles.iconContainer}>
+                    <Ionicons name={item.icon} size={22} color={theme.colors.secondary} />
+                  </View>
                   <Text style={[styles.menuLabel, isRTL && styles.rtlText]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.menuFooter}>
+              <Text style={[styles.footerText, isRTL && styles.rtlText]}>
+                Darna
+              </Text>
             </View>
           </Animated.View>
         ) : null}
@@ -534,22 +554,35 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     right: 0,
-    width: 280,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl + theme.spacing.sm,
+    width: 320,
     backgroundColor: theme.colors.card,
     ...theme.shadow.card,
-    gap: theme.spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: -8, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 30,
+    elevation: 15,
   },
-  menuLogoContainer: {
-    alignItems: 'flex-start',
-    marginTop: Platform.OS === 'android' ? theme.spacing.sm : 0,
-    marginBottom: theme.spacing.md,
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: theme.spacing.md,
   },
-  menuLogoContainerRtl: {
-    alignItems: 'flex-end',
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuItems: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
     gap: theme.spacing.sm,
   },
   menuItem: {
@@ -557,13 +590,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    minHeight: 56,
   },
   menuItemRtl: {
     flexDirection: 'row-reverse',
   },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   menuLabel: {
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
     color: theme.colors.text,
+  },
+  menuFooter: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.muted,
+    letterSpacing: 1,
   },
 });
 
