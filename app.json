@@ -4,16 +4,16 @@
     "slug": "Darna",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/twensa-icon.png",
+    "icon": "./assets/darna-twensa-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
       "expo-splash-screen"
     ],
     "splash": {
-      "image": "./assets/twensa-splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0066CC"
+      "image": "./assets/darna-splash-screen.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
