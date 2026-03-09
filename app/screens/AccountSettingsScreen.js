@@ -63,6 +63,13 @@ const AccountSettingsScreen = () => {
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
   const [passwordResetCooldown, setPasswordResetCooldown] = useState(0);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  
+  // Email change modal states
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const languageOptions = [
     { code: 'it', label: languageStrings.italian },
@@ -133,6 +140,78 @@ const AccountSettingsScreen = () => {
       setPasswordResetCooldown(60);
     }
     setPasswordResetLoading(false);
+  };
+
+  const handleChangeEmail = async () => {
+    const trimmedEmail = newEmail.trim().toLowerCase();
+    const trimmedPassword = currentPassword.trim();
+    
+    // Validation
+    if (!trimmedEmail) {
+      setEmailError(menuStrings.emailRequired || 'Inserisci una email');
+      return;
+    }
+    if (!trimmedPassword) {
+      setEmailError(menuStrings.passwordRequired || 'Inserisci la password');
+      return;
+    }
+    if (trimmedEmail === user?.email?.toLowerCase()) {
+      setEmailError(menuStrings.emailSame || 'La nuova email è uguale a quella attuale');
+      return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setEmailError(menuStrings.emailInvalid || 'Formato email non valido');
+      return;
+    }
+    
+    setEmailLoading(true);
+    setEmailError('');
+    
+    try {
+      // Step 1: Re-authenticate user
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: trimmedPassword,
+      });
+      
+      if (authError) {
+        setEmailError(menuStrings.passwordIncorrect || 'Password non corretta');
+        setEmailLoading(false);
+        return;
+      }
+      
+      // Step 2: Update email
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: trimmedEmail,
+      });
+      
+      if (updateError) {
+        if (updateError.message?.includes('already registered') || updateError.message?.includes('already exists')) {
+          setEmailError(menuStrings.emailAlreadyExists || 'Questa email è già registrata');
+        } else {
+          setEmailError(updateError.message || menuStrings.emailChangeError || 'Errore durante il cambio email');
+        }
+        setEmailLoading(false);
+        return;
+      }
+      
+      // Success
+      setShowEmailModal(false);
+      setNewEmail('');
+      setCurrentPassword('');
+      Alert.alert(
+        menuStrings.emailChangeSuccessTitle || 'Email aggiornata!',
+        menuStrings.emailChangeSuccessMessage || 'Controlla la tua nuova casella email per confermare il cambio.',
+        [{ text: menuStrings.gotIt || 'Ho capito' }]
+      );
+    } catch (err) {
+      setEmailError(err?.message || menuStrings.emailChangeError || 'Errore durante il cambio email');
+    } finally {
+      setEmailLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -286,10 +365,15 @@ const AccountSettingsScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.fieldRow}>
+          <TouchableOpacity style={styles.fieldRow} onPress={() => setShowEmailModal(true)}>
             <Text style={[styles.fieldLabel, isRTL && styles.rtlText]}>Email</Text>
-            <Text style={[styles.fieldValue, isRTL && styles.rtlText]}>{user?.email || '-'}</Text>
-          </View>
+            <View style={[styles.inputRow, isRTL && styles.rowReverse]}>
+              <Text style={[styles.fieldValue, styles.emailValue, isRTL && styles.rtlText]}>
+                {user?.email || '-'}
+              </Text>
+              <Ionicons name="create-outline" size={18} color={appTheme.colors.secondary} />
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.actionRow, isRTL && styles.rowReverse]}
             onPress={handleChangePassword}
@@ -332,6 +416,120 @@ const AccountSettingsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Email Change Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showEmailModal}
+        onRequestClose={() => {
+          if (!emailLoading) {
+            setShowEmailModal(false);
+            setNewEmail('');
+            setCurrentPassword('');
+            setEmailError('');
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, styles.emailModalContent, isRTL && styles.rtlText]}>
+            <View style={styles.modalIconContainer}>
+              <View style={[styles.modalIconCircle, { backgroundColor: appTheme.colors.secondary }]}>
+                <Ionicons name="mail" size={32} color="#fff" />
+              </View>
+            </View>
+            
+            <Text style={[styles.modalTitle, isRTL && styles.rtlText]}>
+              {menuStrings.changeEmail || 'Cambia email'}
+            </Text>
+            
+            <Text style={[styles.modalDescription, isRTL && styles.rtlText]}>
+              {menuStrings.changeEmailDescription || 'Inserisci la nuova email e la tua password attuale per confermare.'}
+            </Text>
+            
+            {/* New Email Input */}
+            <View style={[styles.modalInputContainer, isRTL && styles.rowReverse]}>
+              <Ionicons name="mail-outline" size={20} color={appTheme.colors.muted} style={styles.modalInputIcon} />
+              <TextInput
+                style={[styles.modalInput, isRTL && styles.rtlText]}
+                value={newEmail}
+                onChangeText={(text) => {
+                  setNewEmail(text);
+                  setEmailError('');
+                }}
+                placeholder={menuStrings.newEmailPlaceholder || 'Nuova email'}
+                placeholderTextColor={appTheme.colors.muted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!emailLoading}
+              />
+            </View>
+            
+            {/* Current Password Input */}
+            <View style={[styles.modalInputContainer, isRTL && styles.rowReverse]}>
+              <Ionicons name="lock-closed-outline" size={20} color={appTheme.colors.muted} style={styles.modalInputIcon} />
+              <TextInput
+                style={[styles.modalInput, isRTL && styles.rtlText]}
+                value={currentPassword}
+                onChangeText={(text) => {
+                  setCurrentPassword(text);
+                  setEmailError('');
+                }}
+                placeholder={menuStrings.currentPasswordPlaceholder || 'Password attuale'}
+                placeholderTextColor={appTheme.colors.muted}
+                secureTextEntry
+                editable={!emailLoading}
+              />
+            </View>
+            
+            {/* Error Message */}
+            {emailError ? (
+              <Text style={[styles.modalErrorText, isRTL && styles.rtlText]}>
+                {emailError}
+              </Text>
+            ) : null}
+            
+            {/* Action Buttons */}
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButtonSecondary, { borderColor: appTheme.colors.border }]}
+                onPress={() => {
+                  setShowEmailModal(false);
+                  setNewEmail('');
+                  setCurrentPassword('');
+                  setEmailError('');
+                }}
+                disabled={emailLoading}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.modalButtonSecondaryText, { color: appTheme.colors.text }]}>
+                  {menuStrings.cancel || 'Annulla'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.modalButtonPrimary,
+                  { backgroundColor: appTheme.colors.secondary },
+                  (!newEmail.trim() || !currentPassword.trim() || emailLoading) && styles.modalButtonDisabled,
+                ]}
+                onPress={handleChangeEmail}
+                disabled={!newEmail.trim() || !currentPassword.trim() || emailLoading}
+                activeOpacity={0.8}
+              >
+                {emailLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonPrimaryText}>
+                    {menuStrings.confirm || 'Conferma'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Password Reset Success Modal */}
       <Modal
@@ -478,6 +676,9 @@ const createStyles = (appTheme) =>
     fieldValue: {
       color: appTheme.colors.text,
       fontWeight: '600',
+    },
+    emailValue: {
+      flex: 1,
     },
     actionRow: {
       flexDirection: 'row',
@@ -664,6 +865,69 @@ const createStyles = (appTheme) =>
     modalButtonText: {
       color: '#fff',
       fontSize: 16,
+      fontWeight: '700',
+    },
+    
+    // Email Modal specific styles
+    emailModalContent: {
+      padding: appTheme.spacing.lg,
+    },
+    modalInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      borderWidth: 1,
+      borderColor: appTheme.colors.border,
+      borderRadius: appTheme.radius.md,
+      paddingHorizontal: appTheme.spacing.md,
+      marginBottom: appTheme.spacing.sm,
+      backgroundColor: appTheme.colors.background,
+    },
+    modalInputIcon: {
+      marginRight: appTheme.spacing.sm,
+    },
+    modalInput: {
+      flex: 1,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: appTheme.colors.text,
+    },
+    modalErrorText: {
+      color: appTheme.colors.primary,
+      fontSize: 13,
+      marginBottom: appTheme.spacing.md,
+      textAlign: 'center',
+    },
+    modalButtonContainer: {
+      flexDirection: 'row',
+      gap: appTheme.spacing.sm,
+      width: '100%',
+    },
+    modalButtonPrimary: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: appTheme.radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalButtonSecondary: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: appTheme.radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+    },
+    modalButtonDisabled: {
+      opacity: 0.6,
+    },
+    modalButtonPrimaryText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    modalButtonSecondaryText: {
+      fontSize: 15,
       fontWeight: '700',
     },
   });
