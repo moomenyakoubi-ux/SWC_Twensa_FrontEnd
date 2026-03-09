@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -61,6 +62,7 @@ const AccountSettingsScreen = () => {
   const [savingName, setSavingName] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
   const [passwordResetCooldown, setPasswordResetCooldown] = useState(0);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const languageOptions = [
     { code: 'it', label: languageStrings.italian },
@@ -127,10 +129,7 @@ const AccountSettingsScreen = () => {
     if (error) {
       Alert.alert('Errore', error.message || 'Impossibile inviare il link.');
     } else {
-      Alert.alert(
-        'Link inviato',
-        menuStrings.passwordResetSent || "Ti abbiamo inviato un'email con il link per cambiare la password. Controlla la tua casella di posta."
-      );
+      setShowPasswordModal(true);
       setPasswordResetCooldown(60);
     }
     setPasswordResetLoading(false);
@@ -333,6 +332,42 @@ const AccountSettingsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Password Reset Success Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showPasswordModal}
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, isRTL && styles.rtlText]}>
+            <View style={styles.modalIconContainer}>
+              <View style={[styles.modalIconCircle, { backgroundColor: appTheme.colors.secondary }]}>
+                <Ionicons name="mail" size={40} color="#fff" />
+              </View>
+            </View>
+            
+            <Text style={[styles.modalTitle, isRTL && styles.rtlText]}>
+              {menuStrings.passwordResetTitle || 'Email inviata!'}
+            </Text>
+            
+            <Text style={[styles.modalDescription, isRTL && styles.rtlText]}>
+              {menuStrings.passwordResetSent}
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: appTheme.colors.secondary }]}
+              onPress={() => setShowPasswordModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>
+                {menuStrings.gotIt || 'Ho capito'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -574,6 +609,62 @@ const createStyles = (appTheme) =>
       marginTop: appTheme.spacing.sm,
       fontSize: 13,
       color: appTheme.colors.muted,
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(12, 27, 51, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: appTheme.spacing.lg,
+    },
+    modalContent: {
+      backgroundColor: appTheme.colors.card,
+      borderRadius: appTheme.radius.lg,
+      padding: appTheme.spacing.xl,
+      width: '100%',
+      maxWidth: 360,
+      alignItems: 'center',
+      ...appTheme.shadow.card,
+      borderWidth: 1,
+      borderColor: appTheme.colors.border,
+    },
+    modalIconContainer: {
+      marginBottom: appTheme.spacing.md,
+    },
+    modalIconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...appTheme.shadow.card,
+    },
+    modalTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: appTheme.colors.text,
+      marginBottom: appTheme.spacing.sm,
+      textAlign: 'center',
+    },
+    modalDescription: {
+      fontSize: 15,
+      color: appTheme.colors.muted,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: appTheme.spacing.lg,
+    },
+    modalButton: {
+      width: '100%',
+      paddingVertical: 14,
+      borderRadius: appTheme.radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '700',
     },
   });
 
