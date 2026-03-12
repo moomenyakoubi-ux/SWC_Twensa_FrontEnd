@@ -12,9 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import theme from '../styles/theme';
 import { useLanguage } from '../context/LanguageContext';
-import { supabase } from '../lib/supabase';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL;
+import { useNotifications } from '../context/NotificationsContext';
 
 const NOTIFICATION_ICONS = {
   message: 'chatbubble-outline',
@@ -59,7 +57,6 @@ const AnimatedNotificationItem = ({ notification, isRTL, strings, onPress, isNew
   const iconColor = NOTIFICATION_COLORS[type] || NOTIFICATION_COLORS.default;
   const isUnread = !notification.read;
   
-  // Animazione per nuove notifiche
   const fadeAnim = useRef(new Animated.Value(isNew ? 0 : 1)).current;
   const slideAnim = useRef(new Animated.Value(isNew ? -20 : 0)).current;
   
@@ -114,148 +111,59 @@ const AnimatedNotificationItem = ({ notification, isRTL, strings, onPress, isNew
 const NotificationsSummary = ({ isRTL = false, maxItems = 5 }) => {
   const navigation = useNavigation();
   const { strings } = useLanguage();
-  const [notifications, setNotifications] = useState([]);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [error, setError] = useState(null);
+  const { 
+    notifications, 
+    unreadCount, 
+    refreshNotifications, 
+    markAsRead, 
+    isInitialized 
+  } = useNotifications();
   
-  // Track previous notifications to detect new ones
-  const prevNotificationsRef = useRef([]);
   const [newIds, setNewIds] = useState(new Set());
+  const prevNotificationsRef = useRef([]);
 
-  const fetchNotifications = async (showLoading = false) => {
-    try {
-      // Solo per refresh manuale o primo caricamento mostriamo stato loading
-      if (showLoading && notifications.length === 0) {
-        setIsInitialLoading(true);
-      }
-      
-      setError(null);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        setIsInitialLoading(false);
-        return;
-      }
-
-      const url = `${API_BASE}/api/notifications?limit=${maxItems}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch notifications: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Detect new notifications (quelle che non c'erano prima)
-      const currentIds = new Set((data.notifications || []).map(n => n.id));
-      const prevIds = new Set(prevNotificationsRef.current.map(n => n.id));
-      const newlyAdded = new Set([...currentIds].filter(id => !prevIds.has(id)));
-      
-      if (newlyAdded.size > 0) {
-        setNewIds(newlyAdded);
-        // Dopo 1 secondo rimuovi lo stato "new" per le prossime volte
-        setTimeout(() => setNewIds(new Set()), 1000);
-      }
-      
-      prevNotificationsRef.current = data.notifications || [];
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount || 0);
-    } catch (err) {
-      console.error('[NotificationsSummary] Error:', err);
-      // Non mostrare errore se è un refresh in background
-      if (notifications.length === 0) {
-        setError(err.message);
-      }
-    } finally {
-      setIsInitialLoading(false);
+  // Traccia nuove notifiche per animazione
+  useEffect(() => {
+    const currentIds = new Set(notifications.map(n => n.id));
+    const prevIds = new Set(prevNotificationsRef.current.map(n => n.id));
+    const newlyAdded = new Set([...currentIds].filter(id => !prevIds.has(id)));
+    
+    if (newlyAdded.size > 0) {
+      setNewIds(newlyAdded);
+      setTimeout(() => setNewIds(new Set()), 1000);
     }
+    
+    prevNotificationsRef.current = notifications;
+  }, [notifications]);
+
+  // Pull to refresh manuale
+  const handleRefresh = () => {
+    refreshNotifications(true);
   };
 
-  useEffect(() => {
-    // Caricamento iniziale con loading visibile
-    fetchNotifications(true);
-
-    // Refresh ogni 30 secondi - silenzioso, senza loading
-    const interval = setInterval(() => {
-      fetchNotifications(false);
-    }, 30000);
-    
-    // Realtime subscription per nuove notifiche
-    let subscription;
-    
-    const setupRealtime = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
-      
-      subscription = supabase
-        .channel('notifications_' + session.user.id)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notification_logs',
-            filter: `user_id=eq.${session.user.id}`,
-          },
-          (payload) => {
-            console.log('[Notifications] Realtime new notification:', payload);
-            // Ricarica silenziosamente senza mostrare loading
-            fetchNotifications(false);
-          }
-        )
-        .subscribe();
-    };
-    
-    setupRealtime();
-    
-    return () => {
-      clearInterval(interval);
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, []);
-
   const handleNotificationPress = async (notification) => {
-    // Mark as read
     if (!notification.read) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          await fetch(`${API_BASE}/api/notifications/${notification.id}/read`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-          });
-          // Refresh silenzioso
-          fetchNotifications(false);
-        }
-      } catch (err) {
-        console.error('[NotificationsSummary] Mark read error:', err);
-      }
+      await markAsRead(notification.id);
     }
 
     // Navigazione basata sul tipo
     switch (notification.type) {
       case 'message':
-        if (notification.conversationId) {
-          navigation.navigate('Chat', { conversationId: notification.conversationId });
+        if (notification.data?.conversationId) {
+          navigation.navigate('Chat', { conversationId: notification.data.conversationId });
         }
         break;
       case 'like':
       case 'comment':
+        if (notification.data?.likerId || notification.data?.commenterId) {
+          navigation.navigate('PublicProfile', { 
+            profileId: notification.data.likerId || notification.data.commenterId 
+          });
+        }
+        break;
       case 'follow':
-        if (notification.actorId) {
-          navigation.navigate('PublicProfile', { profileId: notification.actorId });
+        if (notification.data?.followerId) {
+          navigation.navigate('PublicProfile', { profileId: notification.data.followerId });
         }
         break;
       default:
@@ -264,73 +172,22 @@ const NotificationsSummary = ({ isRTL = false, maxItems = 5 }) => {
   };
 
   const handleViewAll = () => {
+    // TODO: Naviga a schermata notifiche completa
     console.log('[NotificationsSummary] View all pressed');
   };
 
-  const handleDismiss = () => {
-    setNotifications([]);
-  };
-  
-  const handleRetry = () => {
-    fetchNotifications(true);
-  };
+  // Limita notifiche visualizzate
+  const displayedNotifications = notifications.slice(0, maxItems);
 
-  // Render del contenuto
-  const renderContent = () => {
-    // Solo al primo caricamento mostriamo il loading
-    if (isInitialLoading) {
-      return (
+  if (!isInitialized) {
+    return (
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
         </View>
-      );
-    }
-    
-    // Errore solo se non abbiamo dati
-    if (error && notifications.length === 0) {
-      return (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={20} color={theme.colors.danger} />
-          <Text style={[styles.errorText, isRTL && styles.rtlText]}>
-            {strings.notifications?.error || 'Errore caricamento'}
-          </Text>
-          <TouchableOpacity onPress={handleRetry}>
-            <Text style={styles.retryText}>
-              {strings.notifications?.retry || 'Riprova'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-    
-    // Empty state
-    if (notifications.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={24} color={theme.colors.muted} />
-          <Text style={[styles.emptyText, isRTL && styles.rtlText]}>
-            {strings?.empty || 'Nessuna notifica'}
-          </Text>
-        </View>
-      );
-    }
-    
-    // Lista notifiche - sempre visibile, anche durante refresh
-    return (
-      <View style={styles.notificationsList}>
-        {notifications.map((notification) => (
-          <AnimatedNotificationItem
-            key={notification.id}
-            notification={notification}
-            isRTL={isRTL}
-            strings={strings.notifications}
-            onPress={() => handleNotificationPress(notification)}
-            isNew={newIds.has(notification.id)}
-          />
-        ))}
       </View>
     );
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -357,16 +214,36 @@ const NotificationsSummary = ({ isRTL = false, maxItems = 5 }) => {
                   {strings.notifications?.viewAll || 'Vedi tutte'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDismiss} style={styles.closeButton}>
-                <Ionicons name="close" size={18} color={theme.colors.muted} />
+              <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
+                <Ionicons name="refresh" size={18} color={theme.colors.muted} />
               </TouchableOpacity>
             </>
           )}
         </View>
       </View>
 
-      {/* Content - sempre renderizzato, mai bloccati da loading */}
-      {renderContent()}
+      {/* Content */}
+      {displayedNotifications.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="notifications-off-outline" size={24} color={theme.colors.muted} />
+          <Text style={[styles.emptyText, isRTL && styles.rtlText]}>
+            {strings?.empty || 'Nessuna notifica'}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.notificationsList}>
+          {displayedNotifications.map((notification) => (
+            <AnimatedNotificationItem
+              key={notification.id}
+              notification={notification}
+              isRTL={isRTL}
+              strings={strings.notifications}
+              onPress={() => handleNotificationPress(notification)}
+              isNew={newIds.has(notification.id)}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -435,26 +312,12 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
-  closeButton: {
+  refreshButton: {
     padding: 4,
   },
   loadingContainer: {
     paddingVertical: theme.spacing.lg,
     alignItems: 'center',
-  },
-  errorContainer: {
-    paddingVertical: theme.spacing.md,
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-  },
-  errorText: {
-    fontSize: 13,
-    color: theme.colors.muted,
-  },
-  retryText: {
-    fontSize: 13,
-    color: theme.colors.primary,
-    fontWeight: '600',
   },
   emptyContainer: {
     paddingVertical: theme.spacing.lg,

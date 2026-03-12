@@ -28,6 +28,7 @@ import { LanguageProvider, useLanguage } from './app/context/LanguageContext';
 import { ContactsProvider } from './app/context/ContactsContext';
 import ContactsScreen from './app/screens/ContactsScreen';
 import { PostsProvider } from './app/context/PostsContext';
+import { NotificationsProvider, useNotifications } from './app/context/NotificationsContext';
 import { ThemeProvider, useAppTheme } from './app/context/ThemeContext';
 import WebTabBar from './app/components/WebTabBar';
 import WebSidebar from './app/components/WebSidebar';
@@ -89,6 +90,7 @@ const replaceAuthPath = (route) => {
 const AppTabs = ({ navigationRef }) => {
   const { strings, isRTL } = useLanguage();
   const { theme: appTheme } = useAppTheme();
+  const { unreadMessages } = useNotifications();
   const isWeb = Platform.OS === 'web';
   const navigation = useNavigation();
   
@@ -153,7 +155,6 @@ const AppTabs = ({ navigationRef }) => {
         Notizie: 'newspaper',
         Viaggi: 'airplane',
         Spedizioni: 'cube',
-
         Profilo: 'person',
         AccountSettings: 'settings',
         AddContact: 'person-add',
@@ -168,6 +169,14 @@ const AppTabs = ({ navigationRef }) => {
       };
       const iconName = icons[route.name] || 'ellipse';
       return <Ionicons name={iconName} size={size} color={color} />;
+    },
+    tabBarBadge: route.name === 'Chat' && unreadMessages > 0 ? unreadMessages : undefined,
+    tabBarBadgeStyle: { 
+      backgroundColor: appTheme.colors.danger,
+      fontSize: 10,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
     },
     tabBarActiveTintColor: appTheme.colors.primary,
     tabBarInactiveTintColor: appTheme.colors.muted,
@@ -441,9 +450,11 @@ export default function App() {
       <LanguageProvider>
         <ContactsProvider>
           <PostsProvider>
-            <SafeAreaProvider>
-              <AppContent />
-            </SafeAreaProvider>
+            <NotificationsProvider>
+              <SafeAreaProvider>
+                <AppContent />
+              </SafeAreaProvider>
+            </NotificationsProvider>
           </PostsProvider>
         </ContactsProvider>
       </LanguageProvider>
