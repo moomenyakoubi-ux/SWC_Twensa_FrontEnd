@@ -143,7 +143,40 @@ const NotificationsSummary = ({ isRTL = false, maxItems = 5 }) => {
 
     // Refresh ogni 30 secondi
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    
+    // Realtime subscription per nuove notifiche
+    let subscription;
+    
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      
+      subscription = supabase
+        .channel('notifications_' + session.user.id)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notification_logs',
+            filter: `user_id=eq.${session.user.id}`,
+          },
+          (payload) => {
+            console.log('[Notifications] Realtime new notification:', payload);
+            fetchNotifications(); // Ricarica tutte le notifiche
+          }
+        )
+        .subscribe();
+    };
+    
+    setupRealtime();
+    
+    return () => {
+      clearInterval(interval);
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const handleNotificationPress = async (notification) => {
