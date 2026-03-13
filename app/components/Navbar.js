@@ -1,34 +1,97 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationsContext';
 import { WEB_TAB_BAR_WIDTH } from './WebTabBar';
+import NotificationsPanel from './NotificationsPanel';
+
+// Campanella Notifiche con badge animato
+const NotificationBell = ({ count, onPress, isRTL }) => {
+  const { theme: appTheme } = useAppTheme();
+  
+  return (
+    <TouchableOpacity
+      style={styles.bellButton}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.bellContainer}>
+        <Ionicons 
+          name={count > 0 ? "notifications" : "notifications-outline"} 
+          size={24} 
+          color={appTheme.colors.card} 
+        />
+        {count > 0 && (
+          <View style={[
+            styles.bellBadge, 
+            { backgroundColor: '#ff4757' },
+            isRTL ? styles.bellBadgeRTL : styles.bellBadgeLTR
+          ]}>
+            <Text style={styles.bellBadgeText}>
+              {count > 99 ? '99+' : count}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 const Navbar = ({ title, rightContent, onBack, backLabel, isRTL = false, isElevated = false }) => {
   const { theme: appTheme } = useAppTheme();
   const styles = useMemo(() => createStyles(appTheme), [appTheme]);
   const isWeb = Platform.OS === 'web';
+  const { unreadCount } = useNotifications();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const handleOpenNotifications = useCallback(() => {
+    setIsNotificationsOpen(true);
+  }, []);
+
+  const handleCloseNotifications = useCallback(() => {
+    setIsNotificationsOpen(false);
+  }, []);
+
+  // Default right content con campanella
+  const defaultRightContent = (
+    <NotificationBell 
+      count={unreadCount} 
+      onPress={handleOpenNotifications} 
+      isRTL={isRTL} 
+    />
+  );
 
   return (
-    <SafeAreaView style={[styles.safeArea, isWeb && isElevated && styles.webSafeArea]}>
-      <StatusBar barStyle="light-content" />
-      <View style={[styles.container, isRTL && styles.rtlContainer, isWeb && isElevated && styles.webContainer]}>
-        <View style={[styles.leftGroup, isRTL && styles.leftGroupRtl]}>
-          {onBack ? (
-            <TouchableOpacity
-              accessibilityLabel={backLabel || title}
-              onPress={onBack}
-              style={[styles.backButton, isRTL && styles.backButtonRtl]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={22} color={appTheme.colors.card} />
-            </TouchableOpacity>
-          ) : null}
+    <>
+      <SafeAreaView style={[styles.safeArea, isWeb && isElevated && styles.webSafeArea]}>
+        <StatusBar barStyle="light-content" />
+        <View style={[styles.container, isRTL && styles.rtlContainer, isWeb && isElevated && styles.webContainer]}>
+          <View style={[styles.leftGroup, isRTL && styles.leftGroupRtl]}>
+            {onBack ? (
+              <TouchableOpacity
+                accessibilityLabel={backLabel || title}
+                onPress={onBack}
+                style={[styles.backButton, isRTL && styles.backButtonRtl]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={22} color={appTheme.colors.card} />
+              </TouchableOpacity>
+            ) : null}
 
-          <Text style={[styles.title, isRTL && styles.rtlText]}>{title}</Text>
+            <Text style={[styles.title, isRTL && styles.rtlText]}>{title}</Text>
+          </View>
+          {rightContent ? <View>{rightContent}</View> : defaultRightContent}
         </View>
-        {rightContent ? <View>{rightContent}</View> : null}
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      {/* Pannello Notifiche */}
+      <NotificationsPanel
+        isVisible={isNotificationsOpen}
+        onClose={handleCloseNotifications}
+        isRTL={isRTL}
+      />
+    </>
   );
 };
 
@@ -90,6 +153,36 @@ const createStyles = (appTheme) =>
     rtlText: {
       textAlign: 'right',
       writingDirection: 'rtl',
+    },
+    // Campanella styles
+    bellButton: {
+      padding: 8,
+    },
+    bellContainer: {
+      position: 'relative',
+    },
+    bellBadge: {
+      position: 'absolute',
+      top: -6,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+      borderWidth: 2,
+      borderColor: appTheme.colors.secondary,
+    },
+    bellBadgeLTR: {
+      right: -6,
+    },
+    bellBadgeRTL: {
+      left: -6,
+    },
+    bellBadgeText: {
+      color: '#fff',
+      fontSize: 10,
+      fontWeight: '800',
     },
   });
 

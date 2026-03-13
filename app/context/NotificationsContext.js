@@ -14,6 +14,9 @@ const NotificationsContext = createContext({
   refreshNotifications: () => {},
   markAsRead: async () => {},
   markAllAsRead: async () => {},
+  deleteNotification: async () => {},
+  acceptFollowRequest: async () => {},
+  rejectFollowRequest: async () => {},
 });
 
 export const useNotifications = () => useContext(NotificationsContext);
@@ -168,6 +171,101 @@ export const NotificationsProvider = ({ children }) => {
     }
   }, []);
 
+  // Delete notification
+  const deleteNotification = useCallback(async (notificationId) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return false;
+
+      const response = await fetch(`${API_BASE}/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+
+      if (response.ok) {
+        // Rimuovi dalla lista locale
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        
+        // Ricalcola conteggi
+        const newNotifs = notifications.filter(n => n.id !== notificationId);
+        const counts = calculateUnreadCounts(newNotifs);
+        setUnreadCount(counts.total);
+        setUnreadMessages(counts.messages);
+        setUnreadLikes(counts.likes);
+        setUnreadComments(counts.comments);
+        setUnreadFollows(counts.follows);
+        
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[NotificationsContext] Delete notification error:', err);
+      return false;
+    }
+  }, [notifications, calculateUnreadCounts]);
+
+  // Accept follow request
+  const acceptFollowRequest = useCallback(async (followerId) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return false;
+
+      const response = await fetch(`${API_BASE}/api/follows/accept`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ followerId }),
+      });
+
+      if (response.ok) {
+        // Aggiorna eventuali notifiche di follow pending
+        setNotifications(prev => 
+          prev.map(n => 
+            n.type === 'follow' && n.data?.followerId === followerId
+              ? { ...n, read: true, data: { ...n.data, accepted: true } }
+              : n
+          )
+        );
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[NotificationsContext] Accept follow error:', err);
+      return false;
+    }
+  }, []);
+
+  // Reject follow request
+  const rejectFollowRequest = useCallback(async (followerId) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return false;
+
+      const response = await fetch(`${API_BASE}/api/follows/reject`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ followerId }),
+      });
+
+      if (response.ok) {
+        // Rimuovi la relazione di follow
+        setNotifications(prev => 
+          prev.filter(n => !(n.type === 'follow' && n.data?.followerId === followerId))
+        );
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[NotificationsContext] Reject follow error:', err);
+      return false;
+    }
+  }, []);
+
   // Setup Realtime
   useEffect(() => {
     let isMounted = true;
@@ -259,6 +357,9 @@ export const NotificationsProvider = ({ children }) => {
     refreshNotifications: fetchNotifications,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
+    acceptFollowRequest,
+    rejectFollowRequest,
     isInitialized,
   };
 
